@@ -14,7 +14,7 @@ import (
 
 
 const (
-	RawVidsDir = "tmp/"
+	RawVidsDir = "tmp/raw"
 )
 
 
