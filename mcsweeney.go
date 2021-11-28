@@ -23,16 +23,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-    // Remember, this is a strategy, so it will be more like s.GetContent()
-    err = twitch.GetClips(c.ClientID, c.Token, "16282")
-    if err != nil {
-        fmt.Println("Couldn't get content.")
-        log.Fatal(err)
-    }
+	// Remember, this is a strategy, so it will be more like s.GetContent()
+	err = twitch.GetClips(c.ClientID, c.Token, "16282")
+	if err != nil {
+		fmt.Println("Couldn't get content.")
+		log.Fatal(err)
+	}
 
-    //s.EditContent()
-    //s.CompileContent()
-    //s.ShareContent()
+	//s.EditContent()
+	//s.CompileContent()
+	//s.ShareContent()
 
 	return
 }
