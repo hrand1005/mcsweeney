@@ -19,11 +19,20 @@ func main() {
 
 	err := loadContext("example.yaml", &c)
 	if err != nil {
-		fmt.Printf("Couldn't load context.")
+		fmt.Println("Couldn't load context.")
 		log.Fatal(err)
 	}
 
-	twitch.GetClips(c.ClientID, c.Token, "16282")
+    // Remember, this is a strategy, so it will be more like s.GetContent()
+    err = twitch.GetClips(c.ClientID, c.Token, "16282")
+    if err != nil {
+        fmt.Println("Couldn't get content.")
+        log.Fatal(err)
+    }
+
+    //s.EditContent()
+    //s.CompileContent()
+    //s.ShareContent()
 
 	return
 }
