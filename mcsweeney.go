@@ -1,11 +1,11 @@
 package main
 
 import (
-    "mcsweeney/twitch"
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
+	"mcsweeney/twitch"
 )
 
 type context struct {
@@ -25,31 +25,8 @@ func main() {
 
 	fmt.Printf("ClientID: %s", c.ClientID)
 
-    twitch.GetClips(c.ClientID, c.Token, "16282")
-    /*
-	client, err := helix.NewClient(&helix.Options{
-		ClientID: c.ClientID,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
+	twitch.GetClips(c.ClientID, c.Token, "16282")
 
-	client.SetUserAccessToken(c.Token)
-	defer client.SetUserAccessToken("")
-
-	// Define query for clips
-	clipParams := &helix.ClipsParams{
-		GameID: "16282",
-	}
-
-	// Execute query for clips
-	twitchResp, err := client.GetClips(clipParams)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Printf("Melee:\n%+v\n", twitchResp)
-    */
 	return
 }
 
@@ -78,4 +55,3 @@ func main(){
     eachStrategy(get, edit, share)
 }
 */
-    
