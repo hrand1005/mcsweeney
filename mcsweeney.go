@@ -23,8 +23,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("ClientID: %s", c.ClientID)
-
 	twitch.GetClips(c.ClientID, c.Token, "16282")
 
 	return
