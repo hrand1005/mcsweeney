@@ -1,5 +1,6 @@
 package twitch
 
+
 import (
 	"fmt"
 	"github.com/nicklaw5/helix"
@@ -7,13 +8,17 @@ import (
 	"net/http"
 	"os"
 	"strings"
+    //"sync"
+    "time"
 )
+
 
 const (
 	RawVidsDir = "tmp/"
 )
 
-func GetClips(clientID string, token string, gameID string) error {
+
+func GetClips(clientID string, token string, gameID string, first int) error {
 	client, err := helix.NewClient(&helix.Options{
 		ClientID: clientID,
 	})
@@ -27,6 +32,7 @@ func GetClips(clientID string, token string, gameID string) error {
 	// Define query for clips
 	clipParams := &helix.ClipsParams{
 		GameID: gameID,
+        First: first,
 	}
 
 	// Execute query for clips
@@ -43,19 +49,39 @@ func GetClips(clientID string, token string, gameID string) error {
 	return nil
 }
 
-// TODO: Validate clips here, then download all new
+
 func DownloadNewClips(manyClips []helix.Clip) error {
+    start := time.Now()
+    fmt.Println("Download start...")
+
+    //var wg sync.WaitGroup
+
+    // TODO: spawn goroutines for each download
+    // NOTE: Preliminary testing indicates not much of a difference around 14
+    // clips downloaded using this commented out method. 
+    fmt.Printf("Trying to download %v clips.\n", len(manyClips))
 	for _, v := range manyClips {
 		// TODO: Verify clip here
+        //wg.Add(1)
+        //v := v
 		fmt.Println("Attempting to download a clip...")
-		err := downloadClip(&v)
-		if err != nil {
-			fmt.Println("Failed to download a clip: ", err)
-		}
+        //go func() {
+            //defer wg.Done()
+        err := downloadClip(&v)
+        if err != nil {
+            fmt.Println("Failed to download a clip: ", err)
+        }
+        //}()
 	}
+
+    //wg.Wait()
+    finish := time.Now()
+    elapsed := finish.Sub(start)
+    fmt.Printf("finished in %v\n", elapsed)
 
 	return nil
 }
+
 
 func downloadClip(clip *helix.Clip) error {
 	thumbURL := clip.ThumbnailURL

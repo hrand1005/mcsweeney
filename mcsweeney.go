@@ -12,6 +12,7 @@ type context struct {
 	ClientID string `yaml:"clientID"`
 	Token    string `yaml:"token"`
     GameID string `yaml:"gameID"` 
+    First int `yaml:"first"`
 }
 
 func main() {
@@ -25,7 +26,7 @@ func main() {
 	}
 
 	// Remember, this is a strategy, so it will be more like s.GetContent()
-	err = twitch.GetClips(c.ClientID, c.Token, c.GameID)
+	err = twitch.GetClips(c.ClientID, c.Token, c.GameID, c.First)
 	if err != nil {
 		fmt.Println("Couldn't get content.")
 		log.Fatal(err)
