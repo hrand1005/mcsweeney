@@ -55,6 +55,11 @@ func main() {
         fmt.Printf("Couldn't some clips: %v\n", err)
     }
 
+    //s.CompileContent()
+    err = compileClips()
+    if err != nil {
+        fmt.Printf("Couldn't compile clips: %v\n", err)
+    }
 	//s.CompileContent()
 	//s.ShareContent()
 
@@ -156,6 +161,7 @@ func downloadClip(clip *helix.Clip) error {
 
 	filename := strings.SplitN(mp4URL, "twitch.tv", 2)[1]
 	outFile := RawVidsDir + filename
+
 	out, err := os.Create(outFile)
 	if err != nil {
 		return err
@@ -179,26 +185,51 @@ func getClipPath(clip *helix.Clip) string {
     
 
 // TODO: replace this with a ffmpeg library dear god
+// TODO: goroutines!
 func editClips(clips []helix.Clip) error {
+    f, err := os.Create("clips.txt")
+    if err != nil {
+        return err
+    }
+    defer f.Close()
+
     for _, v := range clips {
-        overlayText := fmt.Sprintf("%s%s", v.Title, v.BroadcasterName)
+        overlayText := fmt.Sprintf("%s\n%s", v.Title, v.BroadcasterName)
         filename := getClipPath(&v)
         rawPath := RawVidsDir + filename
         overlayArg := fmt.Sprintf("drawtext=fontfile=/usr/share/fonts/noto/NotoSansTamilUI-Regular.ttf:text='%s':fontcolor=white:fontsize=24:box=1:boxcolor=black@0.5:boxborderw=5:x=0:y=0", overlayText) 
         processedPath := ProcessedVidsDir + filename
         cmdName := "ffmpeg"
         args := []string{"-i", rawPath, "-vf", overlayArg, "-codec:a", "copy", processedPath}
-        //args := strings.Fields(cmdArgsString)
-        cmd := exec.Command(cmdName, args...)
-        err := cmd.Run()
+        ffmpegCmd := exec.Command(cmdName, args...)
+        err := ffmpegCmd.Run()
         if err != nil {
-            fmt.Printf("Failed to execute cmd: %v\n", err)
+            fmt.Printf("Failed to execute ffmpeg cmd: %v\n", err)
+        }
+
+
+        w := fmt.Sprintf("file '%s'\n", processedPath)
+        _, err = f.WriteString(w)
+        if err != nil {
+            return err
         }
     }
     
     return nil
 }
 
+
+func compileClips() error {
+    cmdName := "ffmpeg"
+    args := []string{"-f", "concat", "-safe", "0", "-i", "clips.txt", "compiled-vid.mp4"}
+    cmd := exec.Command(cmdName, args...)
+    err := cmd.Run()
+    if err != nil {
+        fmt.Printf("Failed to execute ffmpeg cmd: %v\n", err)
+    }
+
+    return nil
+}
 
 // Consider this in the final version
 /*
