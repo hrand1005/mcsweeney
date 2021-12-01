@@ -4,4 +4,4 @@ rm tmp/processed/*
 #rm db/*.db
 #rm compile/tmp/*
 #rm content.txt
-#rm compiled-vid.mp4
+rm compiled-vid.mp4

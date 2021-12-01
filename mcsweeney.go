@@ -195,9 +195,10 @@ func editClips(clips []helix.Clip) error {
 
     for _, v := range clips {
         overlayText := fmt.Sprintf("%s\n%s", v.Title, v.BroadcasterName)
+        fmt.Printf("Overlay text: %s\n", overlayText)
         filename := getClipPath(&v)
         rawPath := RawVidsDir + filename
-        overlayArg := fmt.Sprintf("drawtext=fontfile=/usr/share/fonts/noto/NotoSansTamilUI-Regular.ttf:text='%s':fontcolor=white:fontsize=24:box=1:boxcolor=black@0.5:boxborderw=5:x=0:y=0", overlayText) 
+        overlayArg := fmt.Sprintf(`drawtext=fontfile=/usr/share/fonts/TTF/DejaVuSans.ttf:text='%s':fontcolor=white:fontsize=24:box=1:boxcolor=black@0.5:boxborderw=5:x=0:y=0`, overlayText)
         processedPath := ProcessedVidsDir + filename
         cmdName := "ffmpeg"
         args := []string{"-i", rawPath, "-vf", overlayArg, "-codec:a", "copy", processedPath}
