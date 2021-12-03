@@ -264,7 +264,7 @@ func uploadVideo(args uploadArgs) (*youtube.Video, error) {
 	//TODO: perform checks on the inputs
 
 	// TODO: figure out this
-	client := auth.GetClient(youtube.YoutubeReadonlyScope)
+	client := auth.GetClient(youtube.YoutubeUploadScope)
 
 	service, err := youtube.New(client)
 	if err != nil {
@@ -275,7 +275,8 @@ func uploadVideo(args uploadArgs) (*youtube.Video, error) {
 		Snippet: &youtube.VideoSnippet{
 			Title:       args.Title,
 			Description: args.Description,
-			CategoryId:  args.Category,
+            //TODO: this might be nice :)
+			//CategoryId:  args.Category,
 			Tags:        strings.Split(args.Keywords, ","),
 		},
 		Status: &youtube.VideoStatus{PrivacyStatus: args.Privacy},
