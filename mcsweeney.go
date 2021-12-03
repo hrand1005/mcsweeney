@@ -59,16 +59,33 @@ func main() {
 	editClipsTimer := clipFuncTimer(editClips)
 	err = editClipsTimer(clips)
 	if err != nil {
-		fmt.Printf("Couldn't some clips: %v\n", err)
+		fmt.Printf("Couldn't edit some clips")
+        log.Fatal(err)
 	}
 
 	//s.CompileContent()
 	err = compileClips()
 	if err != nil {
-		fmt.Printf("Couldn't compile clips: %v\n", err)
+		fmt.Printf("Couldn't compile clips")
+        log.Fatal(err)
 	}
 	//s.CompileContent()
 	//s.ShareContent()
+
+    uploadArgs := uploadArgs{
+        "compiled-vid.mp4",
+        "McSweeney's title",
+        "McSweeney's description",
+        "McSweeney's category",
+        "McSweeney's keywords",
+        "private",
+    }
+
+    resp, err := uploadVideo(uploadArgs)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Printf("Upload response: %v", resp)
 
 	return
 }
