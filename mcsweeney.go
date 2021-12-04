@@ -69,16 +69,25 @@ func main() {
 	}
 
     // TODO: Validate clips, add to db
-    for _, v := range clips {
-        err = db.InsertTwitchClip(dbObj, v.URL)
+    var verifiedClips []helix.Clip
+    for i, v := range clips {
+        exists, err := db.ExistsTwitchClip(dbObj, v.URL)
         if err != nil {
             log.Fatal(err)
+        }
+        if !exists {
+            verifiedClips[i] = v
+            fmt.Println("Clip not found in db, inserting...")
+            err = db.InsertTwitchClip(dbObj, v.URL)
+            if err != nil {
+                log.Fatal(err)
+            }
         }
     }
 
 	//s.EditContent()
 	editClipsTimer := clipFuncTimer(editClips)
-	err = editClipsTimer(clips)
+	err = editClipsTimer(verifiedClips)
 	if err != nil {
 		fmt.Printf("Couldn't edit some clips")
         log.Fatal(err)
