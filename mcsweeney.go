@@ -40,11 +40,18 @@ type context struct {
 }
 
 func main() {
-    err := db.CreateDatabase("twitchDB")
+    dbObj, err := db.CreateDatabase("twitchDB")
+    defer dbObj.Close()
     if err != nil {
         log.Fatal(err)
     }
     
+    err = db.CreateTwitchTable(dbObj)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println("Created twitch table in db!")
+
 	// Get context from yaml file
 	c := context{}
 
@@ -60,6 +67,14 @@ func main() {
 		fmt.Println("Couldn't get content.")
 		log.Fatal(err)
 	}
+
+    // TODO: Validate clips, add to db
+    for _, v := range clips {
+        err = db.InsertTwitchClip(dbObj, v.URL)
+        if err != nil {
+            log.Fatal(err)
+        }
+    }
 
 	//s.EditContent()
 	editClipsTimer := clipFuncTimer(editClips)
