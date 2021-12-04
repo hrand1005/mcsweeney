@@ -10,6 +10,7 @@ package main
 
 //TODO: maybe we don't need the entire packages?
 import (
+    "mcsweeney/db"
     "mcsweeney/auth"
     "google.golang.org/api/youtube/v3"
 	"fmt"
@@ -39,10 +40,15 @@ type context struct {
 }
 
 func main() {
+    err := db.CreateDatabase("twitchDB")
+    if err != nil {
+        log.Fatal(err)
+    }
+    
 	// Get context from yaml file
 	c := context{}
 
-	err := loadContext("example.yaml", &c)
+	err = loadContext("example.yaml", &c)
 	if err != nil {
 		fmt.Println("Couldn't load context.")
 		log.Fatal(err)
