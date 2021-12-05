@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-var (
+const (
 	createTwitchTable = `
         CREATE TABLE twitch (
             "clipID" integer NOT NULL PRIMARY KEY AUTOINCREMENT,

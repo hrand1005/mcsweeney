@@ -97,9 +97,8 @@ func main() {
 		fmt.Println("Couldn't compile clips")
 		log.Fatal(err)
 	}
-	//s.CompileContent()
-	//s.ShareContent()
 
+	//s.ShareContent()
 	uploadArgs := uploadArgs{
 		"compiled-vid.mp4",
 		"McSweeney's title",

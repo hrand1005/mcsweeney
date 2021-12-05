@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-var TWITCH = "twitch"
+const TWITCH = "twitch"
 
 type TwitchDB struct {
 	dbHandle *sql.DB
