@@ -49,7 +49,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	dbIntf, err := db.ContentDB(c.Source)
+	dbIntf, err := db.NewContentDB(c.Source)
 	if err != nil {
 		fmt.Println("Couldn't create strategy.")
 		log.Fatal(err)
@@ -68,7 +68,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// TODO: Validate clips, add to db
     verifiedClips := make([]helix.Clip, len(clips))
 	for i, v := range clips {
 		exists, err := dbIntf.Exists(v.URL)
@@ -77,7 +76,6 @@ func main() {
 		}
 		if !exists {
 			verifiedClips[i] = v
-			fmt.Println("Clip not found in db, inserting...")
 			err = dbIntf.Insert(v.URL)
 			if err != nil {
 				log.Fatal(err)
@@ -89,14 +87,14 @@ func main() {
 	editClipsTimer := clipFuncTimer(editClips)
 	err = editClipsTimer(verifiedClips)
 	if err != nil {
-		fmt.Printf("Couldn't edit some clips")
+		fmt.Println("Couldn't edit some clips")
 		log.Fatal(err)
 	}
 
 	//s.CompileContent()
 	err = compileClips()
 	if err != nil {
-		fmt.Printf("Couldn't compile clips")
+		fmt.Println("Couldn't compile clips")
 		log.Fatal(err)
 	}
 	//s.CompileContent()
