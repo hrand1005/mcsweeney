@@ -7,12 +7,15 @@ import (
     _ "github.com/mattn/go-sqlite3"
 )
 
+type TwitchStrategy struct {
+	dbHandle *sql.DB
+}
 
-//type ContentDatabase interface {
-//    Insert() error
-//    Delete() error
-//    Exists() error
-//}
+type ContentDatabase interface {
+    Create() error
+    Insert(string) error
+    Exists(string) (bool, error)
+}
 
 
 var twitchTableSQL = `CREATE TABLE twitch (
@@ -22,31 +25,45 @@ var twitchTableSQL = `CREATE TABLE twitch (
 
 var insertTwitchClip = `INSERT OR IGNORE INTO twitch(url) VALUES (?)`
 var existsTwitchClip = `SELECT EXISTS(SELECT 1 FROM twitch WHERE url=?);`
+var TWITCH = "twitch"
 
-func CreateDatabase(name string) (*sql.DB, error) {
-    dbName := name + ".sqlite"
-    fmt.Println("Creating database %s", dbName)
+func ContentDB(source string) (ContentDatabase, error) {
+	switch source {
+	case TWITCH:
+		return &TwitchStrategy{}, nil
+	default:
+		return nil, fmt.Errorf("Strategy %s not found", source)
+	}
+}
 
-    file, err := os.Create(dbName)
+func (s *TwitchStrategy) Create() error {
+    fmt.Println("Creating twitch.sqlite...")
+
+    file, err := os.Create("twitch.sqlite")
     file.Close()
     if err != nil {
-        return nil, fmt.Errorf("Failed to create db file: %v", err)
+        return fmt.Errorf("Failed to create db file: %v", err)
     }
 
-    db, err := sql.Open("sqlite3", dbName)
+    db, err := sql.Open("sqlite3", "twitch.sqlite")
     if err != nil {
-        return nil, fmt.Errorf("Failed to load db file '%s': %v", dbName, err)
+        return fmt.Errorf("Failed to load twitch.sqlite: %v", err)
     }
     fmt.Println("DB created!")
+    s.dbHandle = db
 
-    return db, nil
+    err = s.createTwitchTable()
+    if err != nil {
+        return fmt.Errorf("Couldn't create twitch table")
+    }
+    return nil
 }
 
 
 // TODO: should be a method?
-func CreateTwitchTable(db *sql.DB) error {
+func (s *TwitchStrategy) createTwitchTable() error {
     fmt.Println("Creating twitch table...")
-    statement, err := db.Prepare(twitchTableSQL)
+    statement, err := s.dbHandle.Prepare(twitchTableSQL)
     if err != nil {
         return fmt.Errorf("Couldn't prepare SQL statement:\n%s\nerr: %v", twitchTableSQL, err)
     }
@@ -58,9 +75,9 @@ func CreateTwitchTable(db *sql.DB) error {
 
 
 // TODO: should be a method?
-func InsertTwitchClip(db * sql.DB, url string) error {
+func (s *TwitchStrategy) Insert(url string) error {
     fmt.Println("Inserting a clip with url: ", url)
-    statement, err := db.Prepare(insertTwitchClip)
+    statement, err := s.dbHandle.Prepare(insertTwitchClip)
     if err != nil {
         return fmt.Errorf("Couldn't prepare SQL statement:\n%s\nerr: %v", insertTwitchClip, err)
     }
@@ -72,24 +89,24 @@ func InsertTwitchClip(db * sql.DB, url string) error {
 
 
 // TODO: should be a method?
-func ExistsTwitchClip(db *sql.DB, url string) (bool, error) {
+func (s *TwitchStrategy) Exists(url string) (bool, error) {
     fmt.Println("Checking if clip with url exists: ", url)
-    statement, err := db.Prepare(existsTwitchClip)
+    statement, err := s.dbHandle.Prepare(existsTwitchClip)
     if err != nil {
         return false, fmt.Errorf("Couldn't prepare SQL statement:\n%s\nerr: %v", existsTwitchClip, err)
     }
 
     var res string
     err = statement.QueryRow(url).Scan(&res)
-    if err == sql.ErrNoRows {
-        return false, nil
-    }
     if err != nil {
         return false, fmt.Errorf("Couldn't execute exists statement: %v", err)
     }
+    if res == "0" {
+        return false, nil
+    }
 
     fmt.Println("Clip already exists in the database.")
-    fmt.Println("Result of exists query: %s", res)
+    fmt.Printf("Result of exists query: %s\n", res)
     return true, nil
 }
     

@@ -10,15 +10,15 @@ package main
 
 //TODO: maybe we don't need the entire packages?
 import (
-    "mcsweeney/db"
-    "mcsweeney/auth"
-    "google.golang.org/api/youtube/v3"
 	"fmt"
 	"github.com/nicklaw5/helix"
+	"google.golang.org/api/youtube/v3"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
 	"log"
+	"mcsweeney/auth"
+	"mcsweeney/db"
 	"net/http"
 	"os"
 	"os/exec"
@@ -33,6 +33,7 @@ const (
 )
 
 type context struct {
+	Source   string `yaml:"source"`
 	ClientID string `yaml:"clientID"`
 	Token    string `yaml:"token"`
 	GameID   string `yaml:"gameID"`
@@ -40,24 +41,23 @@ type context struct {
 }
 
 func main() {
-    dbObj, err := db.CreateDatabase("twitchDB")
-    defer dbObj.Close()
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    err = db.CreateTwitchTable(dbObj)
-    if err != nil {
-        log.Fatal(err)
-    }
-    fmt.Println("Created twitch table in db!")
-
 	// Get context from yaml file
 	c := context{}
-
-	err = loadContext("example.yaml", &c)
+    err := loadContext("example.yaml", &c)
 	if err != nil {
 		fmt.Println("Couldn't load context.")
+		log.Fatal(err)
+	}
+
+	dbIntf, err := db.ContentDB(c.Source)
+	if err != nil {
+		fmt.Println("Couldn't create strategy.")
+		log.Fatal(err)
+	}
+
+	err = dbIntf.Create()
+	if err != nil {
+		fmt.Println("Couldn't create DB.")
 		log.Fatal(err)
 	}
 
@@ -68,54 +68,54 @@ func main() {
 		log.Fatal(err)
 	}
 
-    // TODO: Validate clips, add to db
-    var verifiedClips []helix.Clip
-    for i, v := range clips {
-        exists, err := db.ExistsTwitchClip(dbObj, v.URL)
-        if err != nil {
-            log.Fatal(err)
-        }
-        if !exists {
-            verifiedClips[i] = v
-            fmt.Println("Clip not found in db, inserting...")
-            err = db.InsertTwitchClip(dbObj, v.URL)
-            if err != nil {
-                log.Fatal(err)
-            }
-        }
-    }
+	// TODO: Validate clips, add to db
+    verifiedClips := make([]helix.Clip, len(clips))
+	for i, v := range clips {
+		exists, err := dbIntf.Exists(v.URL)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if !exists {
+			verifiedClips[i] = v
+			fmt.Println("Clip not found in db, inserting...")
+			err = dbIntf.Insert(v.URL)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
 
 	//s.EditContent()
 	editClipsTimer := clipFuncTimer(editClips)
 	err = editClipsTimer(verifiedClips)
 	if err != nil {
 		fmt.Printf("Couldn't edit some clips")
-        log.Fatal(err)
+		log.Fatal(err)
 	}
 
 	//s.CompileContent()
 	err = compileClips()
 	if err != nil {
 		fmt.Printf("Couldn't compile clips")
-        log.Fatal(err)
+		log.Fatal(err)
 	}
 	//s.CompileContent()
 	//s.ShareContent()
 
-    uploadArgs := uploadArgs{
-        "compiled-vid.mp4",
-        "McSweeney's title",
-        "McSweeney's description",
-        "McSweeney's category",
-        "McSweeney's keywords",
-        "private",
-    }
+	uploadArgs := uploadArgs{
+		"compiled-vid.mp4",
+		"McSweeney's title",
+		"McSweeney's description",
+		"McSweeney's category",
+		"McSweeney's keywords",
+		"private",
+	}
 
-    resp, err := uploadVideo(uploadArgs)
-    if err != nil {
-        log.Fatal(err)
-    }
-    fmt.Printf("Upload response: %v", resp)
+	resp, err := uploadVideo(uploadArgs)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Upload response: %v", resp)
 
 	return
 }
@@ -305,14 +305,14 @@ func uploadVideo(args uploadArgs) (*youtube.Video, error) {
 		Snippet: &youtube.VideoSnippet{
 			Title:       args.Title,
 			Description: args.Description,
-            //TODO: this might be nice :)
+			//TODO: this might be nice :)
 			//CategoryId:  args.Category,
-			Tags:        strings.Split(args.Keywords, ","),
+			Tags: strings.Split(args.Keywords, ","),
 		},
 		Status: &youtube.VideoStatus{PrivacyStatus: args.Privacy},
 	}
 
-    insertArgs := []string{"snippet","status"}
+	insertArgs := []string{"snippet", "status"}
 	call := service.Videos.Insert(insertArgs, upload)
 
 	file, err := os.Open(args.Filename)
