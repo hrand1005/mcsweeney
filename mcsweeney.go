@@ -43,7 +43,7 @@ type context struct {
 func main() {
 	// Get context from yaml file
 	c := context{}
-    err := loadContext("example.yaml", &c)
+	err := loadContext("example.yaml", &c)
 	if err != nil {
 		fmt.Println("Couldn't load context.")
 		log.Fatal(err)
@@ -68,7 +68,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-    verifiedClips := make([]helix.Clip, len(clips))
+	verifiedClips := make([]helix.Clip, len(clips))
 	for i, v := range clips {
 		exists, err := dbIntf.Exists(v.URL)
 		if err != nil {

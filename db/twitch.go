@@ -1,13 +1,11 @@
 package db
 
-
 import (
 	"database/sql"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"os"
 )
-
 
 var (
 	createTwitchTable = `
@@ -20,7 +18,6 @@ var (
 
 	existsTwitchClip = `SELECT EXISTS(SELECT 1 FROM twitch WHERE url=?);`
 )
-
 
 func (s *TwitchDB) Create() error {
 	file, err := os.Create("twitch.sqlite")
@@ -44,7 +41,6 @@ func (s *TwitchDB) Create() error {
 	return nil
 }
 
-
 func (s *TwitchDB) Insert(url string) error {
 	statement, err := s.dbHandle.Prepare(insertTwitchClip)
 	if err != nil {
@@ -54,7 +50,6 @@ func (s *TwitchDB) Insert(url string) error {
 
 	return nil
 }
-
 
 func (s *TwitchDB) Exists(url string) (bool, error) {
 	statement, err := s.dbHandle.Prepare(existsTwitchClip)
@@ -67,9 +62,9 @@ func (s *TwitchDB) Exists(url string) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("Couldn't execute exists statement: %v", err)
 	}
-    if res == "0" {
-        return false, nil
-    }
+	if res == "0" {
+		return false, nil
+	}
 
 	return true, nil
 }
