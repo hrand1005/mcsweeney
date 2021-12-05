@@ -3,6 +3,7 @@ module mcsweeney
 go 1.17
 
 require (
+	github.com/mattn/go-sqlite3 v1.14.9
 	github.com/nicklaw5/helix v1.25.0
 	golang.org/x/net v0.0.0-20211201190559-0a0e4e1bb54c
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
@@ -16,7 +17,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.0.5 // indirect
-	github.com/mattn/go-sqlite3 v1.14.9 // indirect
 	go.opencensus.io v0.22.4 // indirect
 	golang.org/x/sys v0.0.0-20210423082822-04245dca01da // indirect
 	golang.org/x/text v0.3.6 // indirect
