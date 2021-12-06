@@ -1,11 +1,10 @@
 package config
 
 import (
-    "fmt"
-	"io/ioutil"
+	"fmt"
 	"gopkg.in/yaml.v2"
+	"io/ioutil"
 )
-
 
 // TODO: More descriptive name
 type Config struct {
@@ -23,7 +22,7 @@ func NewConfig(path string) (*Config, error) {
 		return nil, fmt.Errorf("Failed to read %s: %w", path, err)
 	}
 
-    c := Config{}
+	c := Config{}
 	err = yaml.Unmarshal(raw, &c)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to unmarshal: %v", err)
@@ -31,4 +30,3 @@ func NewConfig(path string) (*Config, error) {
 
 	return &c, nil
 }
-

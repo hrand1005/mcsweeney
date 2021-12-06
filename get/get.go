@@ -3,7 +3,7 @@ package get
 import (
 	"fmt"
 	"github.com/nicklaw5/helix"
-    "mcsweeney/config"
+	"mcsweeney/config"
 	"mcsweeney/db"
 )
 

@@ -19,11 +19,9 @@ const (
 	existsTwitchClip = `SELECT EXISTS(SELECT 1 FROM twitch WHERE url=?);`
 )
 
-
 type TwitchDB struct {
 	dbHandle *sql.DB
 }
-
 
 func (t *TwitchDB) Create() error {
 	file, err := os.Create("twitch.sqlite")

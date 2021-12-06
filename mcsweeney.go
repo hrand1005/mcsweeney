@@ -16,9 +16,9 @@ import (
 	"google.golang.org/api/youtube/v3"
 	"log"
 	"mcsweeney/auth"
-    "mcsweeney/config"
+	"mcsweeney/config"
 	"mcsweeney/db"
-    "mcsweeney/get"
+	"mcsweeney/get"
 	"os"
 	"os/exec"
 	"strings"
@@ -39,31 +39,31 @@ func main() {
 		log.Fatal(err)
 	}
 
-    // TODO: let's init the db here instead of later
+	// TODO: let's init the db here instead of later
 	dbIntf, err := db.NewContentDB(c.Source)
 	if err != nil {
 		fmt.Println("Couldn't create content-db.")
 		log.Fatal(err)
 	}
 
-    // TODO: change to .Init()
+	// TODO: change to .Init()
 	err = dbIntf.Create()
 	if err != nil {
 		fmt.Println("Couldn't create DB.")
 		log.Fatal(err)
 	}
 
-    getIntf, err := get.NewContentGetter(*c, dbIntf)
-    if err != nil {
-        fmt.Println("Couldn't create content-getter.")
-        log.Fatal(err)
-    }
+	getIntf, err := get.NewContentGetter(*c, dbIntf)
+	if err != nil {
+		fmt.Println("Couldn't create content-getter.")
+		log.Fatal(err)
+	}
 
-    content, err := getIntf.GetContent()
-    if err != nil {
-        fmt.Println("Couldn't get new content.")
-        log.Fatal(err)
-    }
+	content, err := getIntf.GetContent()
+	if err != nil {
+		fmt.Println("Couldn't get new content.")
+		log.Fatal(err)
+	}
 
 	//s.EditContent()
 	editClipsTimer := clipFuncTimer(editClips)

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/nicklaw5/helix"
 	"io"
-    "mcsweeney/config"
+	"mcsweeney/config"
 	"mcsweeney/db"
 	"net/http"
 	"os"
