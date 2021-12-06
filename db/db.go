@@ -1,15 +1,10 @@
 package db
 
 import (
-	"database/sql"
 	"fmt"
 )
 
 const TWITCH = "twitch"
-
-type TwitchDB struct {
-	dbHandle *sql.DB
-}
 
 type ContentDB interface {
 	Create() error

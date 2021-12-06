@@ -6,6 +6,7 @@ package main
 - Architecture
     - Think about params, pointers, interfaces, etc.
 - Goroutines
+- Decide on a standard for where to use pointers vs struct values
 */
 
 //TODO: maybe we don't need the entire packages?
@@ -13,13 +14,11 @@ import (
 	"fmt"
 	"github.com/nicklaw5/helix"
 	"google.golang.org/api/youtube/v3"
-	"gopkg.in/yaml.v2"
-	"io"
-	"io/ioutil"
 	"log"
 	"mcsweeney/auth"
+    "mcsweeney/config"
 	"mcsweeney/db"
-	"net/http"
+    "mcsweeney/get"
 	"os"
 	"os/exec"
 	"strings"
@@ -32,60 +31,43 @@ const (
 	ProcessedVidsDir = "tmp/processed"
 )
 
-type context struct {
-	Source   string `yaml:"source"`
-	ClientID string `yaml:"clientID"`
-	Token    string `yaml:"token"`
-	GameID   string `yaml:"gameID"`
-	First    int    `yaml:"first"`
-}
-
 func main() {
-	// Get context from yaml file
-	c := context{}
-	err := loadContext("example.yaml", &c)
+	// Get config from yaml file
+	c, err := config.NewConfig("config/example.yaml")
 	if err != nil {
-		fmt.Println("Couldn't load context.")
+		fmt.Println("Couldn't load config.")
 		log.Fatal(err)
 	}
 
+    // TODO: let's init the db here instead of later
 	dbIntf, err := db.NewContentDB(c.Source)
 	if err != nil {
-		fmt.Println("Couldn't create strategy.")
+		fmt.Println("Couldn't create content-db.")
 		log.Fatal(err)
 	}
 
+    // TODO: change to .Init()
 	err = dbIntf.Create()
 	if err != nil {
 		fmt.Println("Couldn't create DB.")
 		log.Fatal(err)
 	}
 
-	// Remember, this is a strategy, so it will be more like s.GetContent()
-	clips, err := getClips(c.ClientID, c.Token, c.GameID, c.First)
-	if err != nil || len(clips) == 0 {
-		fmt.Println("Couldn't get content.")
-		log.Fatal(err)
-	}
+    getIntf, err := get.NewContentGetter(*c, dbIntf)
+    if err != nil {
+        fmt.Println("Couldn't create content-getter.")
+        log.Fatal(err)
+    }
 
-	verifiedClips := make([]helix.Clip, len(clips))
-	for i, v := range clips {
-		exists, err := dbIntf.Exists(v.URL)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if !exists {
-			verifiedClips[i] = v
-			err = dbIntf.Insert(v.URL)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-	}
+    content, err := getIntf.GetContent()
+    if err != nil {
+        fmt.Println("Couldn't get new content.")
+        log.Fatal(err)
+    }
 
 	//s.EditContent()
 	editClipsTimer := clipFuncTimer(editClips)
-	err = editClipsTimer(verifiedClips)
+	err = editClipsTimer(content)
 	if err != nil {
 		fmt.Println("Couldn't edit some clips")
 		log.Fatal(err)
@@ -115,109 +97,6 @@ func main() {
 	fmt.Printf("Upload response: %v", resp)
 
 	return
-}
-
-// It may be appropriate to get more information than just a token
-func loadContext(path string, c *context) error {
-	raw, err := ioutil.ReadFile(path)
-	if err != nil {
-		return fmt.Errorf("Failed to read %s: %w", path, err)
-	}
-
-	err = yaml.Unmarshal(raw, c)
-	if err != nil {
-		return fmt.Errorf("Failed to unmarshal: %v", err)
-	}
-
-	return nil
-}
-
-func getClips(clientID string, token string, gameID string, first int) ([]helix.Clip, error) {
-	client, err := helix.NewClient(&helix.Options{
-		ClientID: clientID,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	client.SetUserAccessToken(token)
-	defer client.SetUserAccessToken("")
-
-	// Define query for clips
-	clipParams := &helix.ClipsParams{
-		GameID: gameID,
-		First:  first,
-	}
-
-	// Execute query for clips, TODO: more error checking here?
-	twitchResp, err := client.GetClips(clipParams)
-	if err != nil {
-		return nil, err
-	}
-
-	err = downloadNewClips(twitchResp.Data.Clips)
-	if err != nil {
-		return nil, err
-	}
-
-	return twitchResp.Data.Clips, nil
-}
-
-func downloadNewClips(manyClips []helix.Clip) error {
-	start := time.Now()
-	fmt.Println("Download start...")
-
-	//var wg sync.WaitGroup
-
-	// TODO: spawn goroutines for each download
-	// NOTE: Preliminary testing indicates not much of a difference around 14
-	// clips downloaded using this commented out method.
-	fmt.Printf("Trying to download %v clips.\n", len(manyClips))
-	for _, v := range manyClips {
-		// TODO: Verify clip here
-		//wg.Add(1)
-		//v := v
-		fmt.Println("Attempting to download a clip...")
-		//go func() {
-		//defer wg.Done()
-		err := downloadClip(&v)
-		if err != nil {
-			fmt.Println("Failed to download a clip: ", err)
-		}
-		//}()
-	}
-
-	//wg.Wait()
-	finish := time.Now()
-	elapsed := finish.Sub(start)
-	fmt.Printf("finished in %v\n", elapsed)
-
-	return nil
-}
-
-func downloadClip(clip *helix.Clip) error {
-	thumbURL := clip.ThumbnailURL
-	mp4URL := strings.SplitN(thumbURL, "-preview", 2)[0] + ".mp4"
-	fmt.Println("MP4 URL: ", mp4URL)
-
-	resp, err := http.Get(mp4URL)
-	defer resp.Body.Close()
-	if err != nil {
-		return err
-	}
-
-	filename := strings.SplitN(mp4URL, "twitch.tv", 2)[1]
-	outFile := RawVidsDir + filename
-
-	out, err := os.Create(outFile)
-	defer out.Close()
-	if err != nil {
-		return err
-	}
-
-	_, err = io.Copy(out, resp.Body)
-
-	return err
 }
 
 //TODO: get rid of this

@@ -19,7 +19,13 @@ const (
 	existsTwitchClip = `SELECT EXISTS(SELECT 1 FROM twitch WHERE url=?);`
 )
 
-func (s *TwitchDB) Create() error {
+
+type TwitchDB struct {
+	dbHandle *sql.DB
+}
+
+
+func (t *TwitchDB) Create() error {
 	file, err := os.Create("twitch.sqlite")
 	file.Close()
 	if err != nil {
@@ -30,9 +36,9 @@ func (s *TwitchDB) Create() error {
 	if err != nil {
 		return fmt.Errorf("Failed to load twitch.sqlite: %v", err)
 	}
-	s.dbHandle = db
+	t.dbHandle = db
 
-	statement, err := s.dbHandle.Prepare(createTwitchTable)
+	statement, err := t.dbHandle.Prepare(createTwitchTable)
 	if err != nil {
 		return fmt.Errorf("Couldn't prepare SQL statement:\n%s\nerr: %v", createTwitchTable, err)
 	}
@@ -41,8 +47,8 @@ func (s *TwitchDB) Create() error {
 	return nil
 }
 
-func (s *TwitchDB) Insert(url string) error {
-	statement, err := s.dbHandle.Prepare(insertTwitchClip)
+func (t *TwitchDB) Insert(url string) error {
+	statement, err := t.dbHandle.Prepare(insertTwitchClip)
 	if err != nil {
 		return fmt.Errorf("Couldn't prepare SQL statement:\n%s\nerr: %v", insertTwitchClip, err)
 	}
@@ -51,8 +57,8 @@ func (s *TwitchDB) Insert(url string) error {
 	return nil
 }
 
-func (s *TwitchDB) Exists(url string) (bool, error) {
-	statement, err := s.dbHandle.Prepare(existsTwitchClip)
+func (t *TwitchDB) Exists(url string) (bool, error) {
+	statement, err := t.dbHandle.Prepare(existsTwitchClip)
 	if err != nil {
 		return false, fmt.Errorf("Couldn't prepare SQL statement:\n%s\nerr: %v", existsTwitchClip, err)
 	}
