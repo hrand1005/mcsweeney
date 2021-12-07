@@ -12,18 +12,16 @@ package main
 //TODO: maybe we don't need the entire packages?
 import (
 	"fmt"
-	"github.com/nicklaw5/helix"
 	"google.golang.org/api/youtube/v3"
 	"log"
 	"mcsweeney/auth"
 	"mcsweeney/config"
 	"mcsweeney/db"
+	"mcsweeney/edit"
 	"mcsweeney/get"
 	"os"
-	"os/exec"
 	"strings"
 	//"sync"
-	"time"
 )
 
 const (
@@ -66,15 +64,14 @@ func main() {
 	}
 
 	//s.EditContent()
-	editClipsTimer := clipFuncTimer(editClips)
-	err = editClipsTimer(content)
+	err = edit.ApplyOverlay(content)
 	if err != nil {
 		fmt.Println("Couldn't edit some clips")
 		log.Fatal(err)
 	}
 
 	//s.CompileContent()
-	err = compileClips()
+	err = edit.Compile()
 	if err != nil {
 		fmt.Println("Couldn't compile clips")
 		log.Fatal(err)
@@ -97,61 +94,6 @@ func main() {
 	fmt.Printf("Upload response: %v", resp)
 
 	return
-}
-
-//TODO: get rid of this
-func getClipPath(clip *helix.Clip) string {
-	thumbURL := clip.ThumbnailURL
-	mp4URL := strings.SplitN(thumbURL, "-preview", 2)[0] + ".mp4"
-	filename := strings.SplitN(mp4URL, "twitch.tv", 2)[1]
-
-	return filename
-}
-
-// TODO: replace this with a ffmpeg library dear god
-// TODO: goroutines!
-func editClips(clips []helix.Clip) error {
-	f, err := os.Create("clips.txt")
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	for _, v := range clips {
-		overlayText := fmt.Sprintf("%s\n%s", v.Title, v.BroadcasterName)
-		fmt.Printf("Overlay text: %s\n", overlayText)
-		filename := getClipPath(&v)
-		rawPath := RawVidsDir + filename
-		overlayArg := fmt.Sprintf(`drawtext=fontfile=/usr/share/fonts/TTF/DejaVuSans.ttf:text='%s':fontcolor=white:fontsize=24:box=1:boxcolor=black@0.5:boxborderw=5:x=0:y=0`, overlayText)
-		processedPath := ProcessedVidsDir + filename
-		cmdName := "ffmpeg"
-		args := []string{"-i", rawPath, "-vf", overlayArg, "-codec:a", "copy", processedPath}
-		ffmpegCmd := exec.Command(cmdName, args...)
-		err := ffmpegCmd.Run()
-		if err != nil {
-			fmt.Printf("Failed to execute ffmpeg cmd: %v\n", err)
-		}
-
-		w := fmt.Sprintf("file '%s'\n", processedPath)
-		_, err = f.WriteString(w)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func compileClips() error {
-	cmdName := "ffmpeg"
-	args := []string{"-f", "concat", "-safe", "0", "-i", "clips.txt", "compiled-vid.mp4"}
-	cmd := exec.Command(cmdName, args...)
-	err := cmd.Run()
-	if err != nil {
-		fmt.Printf("Failed to execute ffmpeg cmd: %v\n", err)
-	}
-
-	return nil
 }
 
 type uploadArgs struct {
@@ -217,16 +159,3 @@ func main(){
     eachStrategy(get, edit, share)
 }
 */
-
-// some of that experimental stuff
-type clipFunc func([]helix.Clip) error
-
-func clipFuncTimer(f clipFunc) clipFunc {
-	return func(c []helix.Clip) error {
-		defer func(t time.Time) {
-			fmt.Printf("clipFunc elapsed in %v\n", time.Since(t))
-		}(time.Now())
-
-		return f(c)
-	}
-}
