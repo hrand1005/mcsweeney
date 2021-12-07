@@ -8,11 +8,17 @@ import (
 
 // TODO: More descriptive name
 type Config struct {
-	Source   string `yaml:"source"`
-	ClientID string `yaml:"clientID"`
-	Token    string `yaml:"token"`
-	GameID   string `yaml:"gameID"`
-	First    int    `yaml:"first"`
+	Source      string `yaml:"source"`
+	ClientID    string `yaml:"clientID"`
+	Token       string `yaml:"token"`
+	GameID      string `yaml:"gameID"`
+	First       int    `yaml:"first"`
+	Destination string `yaml:"destination"`
+	Title       string `yaml:"title"`
+	Description string `yaml:"description"`
+	Category    string `yaml:"category"`
+	Keywords    string `yaml:"keywords"`
+	Privacy     string `yaml:"privacy"`
 }
 
 // It may be appropriate to get more information than just a token

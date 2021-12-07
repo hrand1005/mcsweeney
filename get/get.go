@@ -10,6 +10,7 @@ import (
 // TODO: remove this duplicate
 const TWITCH = "twitch"
 
+// TODO: generic content object or interface
 type ContentGetter interface {
 	GetContent() ([]helix.Clip, error)
 }

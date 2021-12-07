@@ -12,15 +12,12 @@ package main
 //TODO: maybe we don't need the entire packages?
 import (
 	"fmt"
-	"google.golang.org/api/youtube/v3"
 	"log"
-	"mcsweeney/auth"
 	"mcsweeney/config"
 	"mcsweeney/db"
 	"mcsweeney/edit"
 	"mcsweeney/get"
-	"os"
-	"strings"
+	"mcsweeney/share"
 	//"sync"
 )
 
@@ -77,76 +74,21 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//s.ShareContent()
-	uploadArgs := uploadArgs{
-		"compiled-vid.mp4",
-		"McSweeney's title",
-		"McSweeney's description",
-		"McSweeney's category",
-		"McSweeney's keywords",
-		"private",
-	}
-
-	resp, err := uploadVideo(uploadArgs)
+	shareIntf, err := share.NewContentSharer(*c, "compiled-vid.mp4")
 	if err != nil {
+		fmt.Println("Couldn't create content-sharer.")
 		log.Fatal(err)
 	}
-	fmt.Printf("Upload response: %v", resp)
+
+	err = shareIntf.Share()
+	if err != nil {
+		fmt.Println("Couldn't share content.")
+		log.Fatal(err)
+	}
+
+	fmt.Println("Content shared successfully!")
 
 	return
-}
-
-type uploadArgs struct {
-	Filename    string
-	Title       string
-	Description string
-	Category    string
-	Keywords    string
-	Privacy     string
-}
-
-func uploadVideo(args uploadArgs) (*youtube.Video, error) {
-	if args.Filename == "" {
-		return nil, fmt.Errorf("cannot upload nil file")
-	}
-	//TODO: perform checks on the inputs
-
-	// TODO: figure out this
-	client := auth.GetClient(youtube.YoutubeUploadScope)
-
-	service, err := youtube.New(client)
-	if err != nil {
-		return nil, fmt.Errorf("Couldn't create youtube service: %v", err)
-	}
-
-	upload := &youtube.Video{
-		Snippet: &youtube.VideoSnippet{
-			Title:       args.Title,
-			Description: args.Description,
-			//TODO: this might be nice :)
-			//CategoryId:  args.Category,
-			Tags: strings.Split(args.Keywords, ","),
-		},
-		Status: &youtube.VideoStatus{PrivacyStatus: args.Privacy},
-	}
-
-	insertArgs := []string{"snippet", "status"}
-	call := service.Videos.Insert(insertArgs, upload)
-
-	file, err := os.Open(args.Filename)
-	defer file.Close()
-	if err != nil {
-		return nil, fmt.Errorf("Couldn't open file: %s, %v", args.Filename, err)
-	}
-
-	response, err := call.Media(file).Do()
-	if err != nil {
-		return nil, fmt.Errorf("Couldn't upload file: %v", err)
-	}
-
-	fmt.Printf("%s uploaded successfully!\nTitle: %s\n", args.Filename, args.Title)
-
-	return response, nil
 }
 
 // Consider this in the final version
