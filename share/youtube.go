@@ -19,6 +19,7 @@ type YoutubeSharer struct {
 
 func NewYoutubeSharer(c config.Config, path string) (*YoutubeSharer, error) {
 	// TODO: validate args?
+	// TODO: should sharer object be reusable? ie should we not do this?
 	return &YoutubeSharer{
 		filename:    path,
 		title:       c.Title,

@@ -10,7 +10,7 @@ import (
 )
 
 // TODO: Enforce valid db? This is a question of design
-func TestNewContentDB(t *testing.T) {
+func TestNewContentGetter(t *testing.T) {
 	testCases := []struct {
 		name       string
 		config     config.Config
