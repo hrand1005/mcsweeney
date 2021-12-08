@@ -41,13 +41,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// TODO: change to .Init()
-	err = dbIntf.Create()
-	if err != nil {
-		fmt.Println("Couldn't create DB.")
-		log.Fatal(err)
-	}
-
 	getIntf, err := get.NewContentGetter(*c, dbIntf)
 	if err != nil {
 		fmt.Println("Couldn't create content-getter.")

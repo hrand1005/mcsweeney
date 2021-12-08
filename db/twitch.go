@@ -23,26 +23,27 @@ type TwitchDB struct {
 	dbHandle *sql.DB
 }
 
-func (t *TwitchDB) Create() error {
+func NewTwitchDB() (*TwitchDB, error) {
 	file, err := os.Create("twitch.sqlite")
 	file.Close()
 	if err != nil {
-		return fmt.Errorf("Failed to create db file: %v", err)
+		return nil, fmt.Errorf("Failed to create db file: %v", err)
 	}
 
 	db, err := sql.Open("sqlite3", "twitch.sqlite")
 	if err != nil {
-		return fmt.Errorf("Failed to load twitch.sqlite: %v", err)
+		return nil, fmt.Errorf("Failed to load twitch.sqlite: %v", err)
 	}
-	t.dbHandle = db
 
-	statement, err := t.dbHandle.Prepare(createTwitchTable)
+	statement, err := db.Prepare(createTwitchTable)
 	if err != nil {
-		return fmt.Errorf("Couldn't prepare SQL statement:\n%s\nerr: %v", createTwitchTable, err)
+		return nil, fmt.Errorf("Couldn't prepare SQL statement:\n%s\nerr: %v", createTwitchTable, err)
 	}
 	statement.Exec()
 
-	return nil
+	return &TwitchDB{
+		dbHandle: db,
+	}, nil
 }
 
 func (t *TwitchDB) Insert(url string) error {
