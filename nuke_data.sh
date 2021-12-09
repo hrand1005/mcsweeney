@@ -2,6 +2,7 @@
 rm tmp/raw/*
 rm tmp/processed/*
 rm *.sqlite
+rm *.db
 #rm compile/tmp/*
 #rm content.txt
 rm compiled-vid.mp4
