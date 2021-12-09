@@ -10,7 +10,6 @@ import (
 	"os"
 	"strings"
 	//"sync"
-	"time"
 )
 
 // TODO: remove duplicate
