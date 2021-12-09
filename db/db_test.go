@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"gotest.tools/assert"
+    "os"
 	"reflect"
 	"testing"
 )
@@ -30,7 +31,8 @@ func TestNewContentDB(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		gotDB, gotErr := NewContentDB(tc.source)
+		gotDB, gotErr := NewContentDB(tc.source, "test-new-content-db")
+        defer os.Remove("test-new-content-db.sqlite")
 		assert.Equal(t, reflect.TypeOf(gotDB), reflect.TypeOf(tc.wantDB))
 		assert.Equal(t, errors.Unwrap(gotErr), errors.Unwrap(tc.wantErr))
 	}

@@ -23,16 +23,18 @@ type TwitchDB struct {
 	dbHandle *sql.DB
 }
 
-func NewTwitchDB() (*TwitchDB, error) {
-	file, err := os.Create("twitch.sqlite")
+// TODO: Decide -- enforce new db? 
+func NewTwitchDB(name string) (*TwitchDB, error) {
+    filename := name + ".sqlite"
+	file, err := os.Create(filename)
 	file.Close()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create db file: %v", err)
+		return nil, fmt.Errorf("Failed to create db %s: %v", filename, err)
 	}
 
-	db, err := sql.Open("sqlite3", "twitch.sqlite")
+	db, err := sql.Open("sqlite3", filename)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to load twitch.sqlite: %v", err)
+		return nil, fmt.Errorf("Failed to load %s: %v", filename, err)
 	}
 
 	statement, err := db.Prepare(createTwitchTable)
