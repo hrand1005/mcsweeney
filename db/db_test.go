@@ -31,8 +31,8 @@ func TestNewContentDB(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		gotDB, gotErr := NewContentDB(tc.source, "test-new-content-db")
-		defer os.Remove("test-new-content-db.sqlite")
+		gotDB, gotErr := NewContentDB(tc.source, "test-new-content-db.db")
+		defer os.Remove("test-new-content-db.db")
 		assert.Equal(t, reflect.TypeOf(gotDB), reflect.TypeOf(tc.wantDB))
 		assert.Equal(t, errors.Unwrap(gotErr), errors.Unwrap(tc.wantErr))
 	}

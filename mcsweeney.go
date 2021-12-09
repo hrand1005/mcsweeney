@@ -34,7 +34,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	dbIntf, err := db.NewContentDB(c.Source)
+	dbIntf, err := db.NewContentDB(c.Source, "mcsweeney-test.db")
 	if err != nil {
 		fmt.Println("Couldn't create content-db.")
 		log.Fatal(err)

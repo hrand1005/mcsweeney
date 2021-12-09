@@ -25,7 +25,7 @@ type TwitchDB struct {
 
 // TODO: Decide -- enforce new db?
 func NewTwitchDB(name string) (*TwitchDB, error) {
-	filename := name + ".sqlite"
+	filename := name
 	file, err := os.Create(filename)
 	file.Close()
 	if err != nil {

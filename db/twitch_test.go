@@ -9,8 +9,8 @@ import (
 )
 
 func TestInsert(t *testing.T) {
-	db, err := NewTwitchDB("test-insert")
-	defer os.Remove("test-insert.sqlite")
+	db, err := NewTwitchDB("test-insert.db")
+	defer os.Remove("test-insert.db")
 	assert.Assert(t, err == nil)
 	err = db.Insert("www.herb.com")
 	assert.Assert(t, err == nil)
