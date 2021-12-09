@@ -9,7 +9,7 @@ import (
 
 const (
 	createTwitchTable = `
-        CREATE TABLE twitch (
+        CREATE TABLE IF NOT EXISTS twitch (
             "clipID" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
             "url" TEXT 
         );`
@@ -24,12 +24,15 @@ type TwitchDB struct {
 }
 
 // TODO: Decide -- enforce new db?
-func NewTwitchDB(name string) (*TwitchDB, error) {
-	filename := name
-	file, err := os.Create(filename)
-	file.Close()
-	if err != nil {
-		return nil, fmt.Errorf("Failed to create db %s: %v", filename, err)
+func NewTwitchDB(filename string) (*TwitchDB, error) {
+	// Create new db file if one doesn't exist
+	_, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		file, err := os.Create(filename)
+		file.Close()
+		if err != nil {
+			return nil, fmt.Errorf("Failed to create db %s: %v", filename, err)
+		}
 	}
 
 	db, err := sql.Open("sqlite3", filename)

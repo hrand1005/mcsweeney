@@ -62,65 +62,37 @@ func (t *TwitchGetter) GetContent() ([]helix.Clip, error) {
 		return nil, fmt.Errorf("Couldn't get clips: %v", err)
 	}
 
-	err = downloadNewClips(dirtyClips)
-	if err != nil {
-		return nil, err
-	}
-
-	cleanClips := make([]helix.Clip, len(dirtyClips))
-	for i, v := range dirtyClips {
+	cleanClips := make([]helix.Clip, 0, len(dirtyClips))
+	for _, v := range dirtyClips {
 		exists, err := t.db.Exists(v.URL)
 		if err != nil {
 			return nil, err
 		}
 		if !exists {
-			cleanClips[i] = v
+			cleanClips = append(cleanClips, v)
 			err = t.db.Insert(v.URL)
+			if err != nil {
+				return nil, err
+			}
+			// TODO: spawn goroutines here?
+			err = downloadClip(&v)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
+	if len(cleanClips) == 0 {
+		return nil, fmt.Errorf("No new clips retrieved.")
+	}
+	fmt.Printf("Downloaded %v new clips.\n", len(cleanClips))
 
 	return cleanClips, nil
-}
-
-func downloadNewClips(manyClips []helix.Clip) error {
-	start := time.Now()
-	fmt.Println("Download start...")
-
-	//var wg sync.WaitGroup
-
-	// TODO: spawn goroutines for each download
-	// NOTE: Preliminary testing indicates not much of a difference around 14
-	// clips downloaded using this commented out method.
-	fmt.Printf("Trying to download %v clips.\n", len(manyClips))
-	for _, v := range manyClips {
-		// TODO: Verify clip here
-		//wg.Add(1)
-		//v := v
-		fmt.Println("Attempting to download a clip...")
-		//go func() {
-		//defer wg.Done()
-		err := downloadClip(&v)
-		if err != nil {
-			fmt.Println("Failed to download a clip: ", err)
-		}
-		//}()
-	}
-
-	//wg.Wait()
-	finish := time.Now()
-	elapsed := finish.Sub(start)
-	fmt.Printf("finished in %v\n", elapsed)
-
-	return nil
 }
 
 func downloadClip(clip *helix.Clip) error {
 	thumbURL := clip.ThumbnailURL
 	mp4URL := strings.SplitN(thumbURL, "-preview", 2)[0] + ".mp4"
-	fmt.Println("MP4 URL: ", mp4URL)
+	fmt.Println("Downloading new clip: ", mp4URL)
 
 	resp, err := http.Get(mp4URL)
 	defer resp.Body.Close()
