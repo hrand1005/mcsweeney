@@ -20,3 +20,4 @@ clips.txt
 client_secret.json
 *.mp4
 *.sqlite
+*.db
