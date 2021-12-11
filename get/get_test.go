@@ -16,7 +16,7 @@ func TestNewContentGetter(t *testing.T) {
 	testCases := []struct {
 		name       string
 		config     config.Config
-		wantGetter ContentGetter
+		wantGetter get.ContentGetter
 		wantErr    error
 	}{
 		{
@@ -24,7 +24,7 @@ func TestNewContentGetter(t *testing.T) {
 			config: config.Config{
 				Source: "twitch",
 			},
-			wantGetter: new(TwitchGetter),
+			wantGetter: new(get.TwitchGetter),
 			wantErr:    nil,
 		},
 		{
@@ -39,7 +39,7 @@ func TestNewContentGetter(t *testing.T) {
 
 	for _, tc := range testCases {
 		// t.Run(tt.name, func(t *testing.T) {
-		gotGetter, gotErr := NewContentGetter(tc.config, nil)
+		gotGetter, gotErr := get.NewContentGetter(tc.config, nil)
 		assert.Equal(t, reflect.TypeOf(gotGetter), reflect.TypeOf(tc.wantGetter))
 		assert.Equal(t, errors.Unwrap(gotErr), errors.Unwrap(tc.wantErr))
 	}
