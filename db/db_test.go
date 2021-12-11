@@ -1,9 +1,10 @@
-package db
+package db_test
 
 import (
 	"errors"
 	"fmt"
 	"gotest.tools/assert"
+	"mcsweeney/db"
 	"os"
 	"reflect"
 	"testing"
@@ -13,13 +14,13 @@ func TestNewContentDB(t *testing.T) {
 	testCases := []struct {
 		name    string
 		source  string
-		wantDB  ContentDB
+		wantDB  db.ContentDB
 		wantErr error
 	}{
 		{
 			name:    "Success: New TwitchDB",
 			source:  "twitch",
-			wantDB:  new(TwitchDB),
+			wantDB:  new(db.TwitchDB),
 			wantErr: nil,
 		},
 		{
@@ -31,7 +32,7 @@ func TestNewContentDB(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		gotDB, gotErr := NewContentDB(tc.source, "test-new-content-db.db")
+		gotDB, gotErr := db.NewContentDB(tc.source, "test-new-content-db.db")
 		defer os.Remove("test-new-content-db.db")
 		assert.Equal(t, reflect.TypeOf(gotDB), reflect.TypeOf(tc.wantDB))
 		assert.Equal(t, errors.Unwrap(gotErr), errors.Unwrap(tc.wantErr))
