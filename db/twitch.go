@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
+    "mcsweeney/content"
 	"os"
 )
 
@@ -51,24 +52,24 @@ func NewTwitchDB(filename string) (*TwitchDB, error) {
 	}, nil
 }
 
-func (t *TwitchDB) Insert(url string) error {
+func (t *TwitchDB) Insert(contentObj *content.ContentObj) error {
 	statement, err := t.dbHandle.Prepare(insertTwitchClip)
 	if err != nil {
 		return fmt.Errorf("Couldn't prepare SQL statement:\n%s\nerr: %v", insertTwitchClip, err)
 	}
-	statement.Exec(url)
+	statement.Exec(contentObj.Url)
 
 	return nil
 }
 
-func (t *TwitchDB) Exists(url string) (bool, error) {
+func (t *TwitchDB) Exists(contentObj *content.ContentObj) (bool, error) {
 	statement, err := t.dbHandle.Prepare(existsTwitchClip)
 	if err != nil {
 		return false, fmt.Errorf("Couldn't prepare SQL statement:\n%s\nerr: %v", existsTwitchClip, err)
 	}
 
 	var res string
-	err = statement.QueryRow(url).Scan(&res)
+	err = statement.QueryRow(contentObj.Url).Scan(&res)
 	if err != nil {
 		return false, fmt.Errorf("Couldn't execute exists statement: %v", err)
 	}

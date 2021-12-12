@@ -7,6 +7,8 @@ package main
     - Think about params, pointers, interfaces, etc.
 - Goroutines
 - Decide on a standard for where to use pointers vs struct values
+- Url or URL, not both
+- Content obj methods? Or limit info passed around? 
 */
 
 //TODO: maybe we don't need the entire packages?
@@ -55,14 +57,14 @@ func main() {
 	//s.EditContent()
 	err = edit.ApplyOverlay(content)
 	if err != nil {
-		fmt.Println("Couldn't edit some clips")
+		fmt.Println("Couldn't edit some content.")
 		log.Fatal(err)
 	}
 
 	//s.CompileContent()
 	err = edit.Compile()
 	if err != nil {
-		fmt.Println("Couldn't compile clips")
+		fmt.Println("Couldn't compile content.")
 		log.Fatal(err)
 	}
 

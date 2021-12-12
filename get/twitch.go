@@ -5,6 +5,7 @@ import (
 	"github.com/nicklaw5/helix"
 	"io"
 	"mcsweeney/config"
+    "mcsweeney/content"
 	"mcsweeney/db"
 	"net/http"
 	"os"
@@ -44,7 +45,7 @@ func NewTwitchGetter(c config.Config) (*TwitchGetter, error) {
 }
 
 // TODO: change this to return a content interface
-func (t *TwitchGetter) GetContent(db db.ContentDB) ([]helix.Clip, error) {
+func (t *TwitchGetter) GetContent(db db.ContentDB) ([]*content.ContentObj, error) {
 	t.client.SetUserAccessToken(t.token)
 	defer t.client.SetUserAccessToken("")
 
@@ -54,51 +55,56 @@ func (t *TwitchGetter) GetContent(db db.ContentDB) ([]helix.Clip, error) {
 		return nil, err
 	}
 
+    // TODO: convert to contentObjs here?
 	dirtyClips := twitchResp.Data.Clips
 	if err != nil || len(dirtyClips) == 0 {
 		return nil, fmt.Errorf("Couldn't get clips: %v", err)
 	}
 
-	cleanClips := make([]helix.Clip, 0, len(dirtyClips))
+	newContent := make([]*content.ContentObj, 0, len(dirtyClips))
 	for _, v := range dirtyClips {
-		exists, err := db.Exists(v.URL)
+        contentObj, err := convertClipToContentObj(&v)
+		exists, err := db.Exists(contentObj)
 		if err != nil {
 			return nil, err
 		}
 		if !exists {
-			cleanClips = append(cleanClips, v)
-			err = db.Insert(v.URL)
+			newContent = append(newContent, contentObj)
+			err = db.Insert(contentObj)
 			if err != nil {
 				return nil, err
 			}
 			// TODO: spawn goroutines here?
-			err = downloadClip(&v)
+            // TODO: method on content obj? Or should it be here?
+			err = downloadContent(contentObj)
 			if err != nil {
 				return nil, err
 			}
+            // Indicate that the content has been downloaded to local machine
+            // TODO: method?
+            contentObj.Status = content.RAW
 		}
 	}
-	if len(cleanClips) == 0 {
+	if len(newContent) == 0 {
 		return nil, fmt.Errorf("No new clips retrieved.")
 	}
-	fmt.Printf("Downloaded %v new clips.\n", len(cleanClips))
+	fmt.Printf("Downloaded %v new clips.\n", len(newContent))
 
-	return cleanClips, nil
+	return newContent, nil
 }
 
-func downloadClip(clip *helix.Clip) error {
-	thumbURL := clip.ThumbnailURL
-	mp4URL := strings.SplitN(thumbURL, "-preview", 2)[0] + ".mp4"
-	fmt.Println("Downloading new clip: ", mp4URL)
+func downloadContent(contentObj *content.ContentObj) error {
+	fmt.Println("Downloading new clip: ", contentObj.Url)
 
-	resp, err := http.Get(mp4URL)
+	resp, err := http.Get(contentObj.Url)
 	defer resp.Body.Close()
 	if err != nil {
 		return err
 	}
 
-	filename := strings.SplitN(mp4URL, "twitch.tv", 2)[1]
+	filename := strings.SplitN(contentObj.Url, "twitch.tv", 2)[1]
 	outFile := RawVidsDir + filename
+    contentObj.Path = outFile
 
 	out, err := os.Create(outFile)
 	defer out.Close()
@@ -109,4 +115,14 @@ func downloadClip(clip *helix.Clip) error {
 	_, err = io.Copy(out, resp.Body)
 
 	return err
+}
+
+func convertClipToContentObj(clip *helix.Clip) (*content.ContentObj, error) {
+    c := &content.ContentObj{}
+    thumbUrl := clip.ThumbnailURL
+	c.Url = strings.SplitN(thumbUrl, "-preview", 2)[0] + ".mp4"
+    c.CreatorName = clip.BroadcasterName
+    c.Title = clip.Title
+
+    return c, nil
 }

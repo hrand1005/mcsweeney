@@ -2,8 +2,8 @@ package get
 
 import (
 	"fmt"
-	"github.com/nicklaw5/helix"
 	"mcsweeney/config"
+    "mcsweeney/content"
 	"mcsweeney/db"
 )
 
@@ -12,7 +12,7 @@ const TWITCH = "twitch"
 
 // TODO: generic content object or interface
 type ContentGetter interface {
-	GetContent(db.ContentDB) ([]helix.Clip, error)
+	GetContent(db.ContentDB) ([]*content.ContentObj, error)
 }
 
 func NewContentGetter(c config.Config) (ContentGetter, error) {

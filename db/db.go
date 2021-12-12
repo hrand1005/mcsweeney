@@ -2,13 +2,14 @@ package db
 
 import (
 	"fmt"
+    "mcsweeney/content"
 )
 
 const TWITCH = "twitch"
 
 type ContentDB interface {
-	Insert(string) error
-	Exists(string) (bool, error)
+	Insert(*content.ContentObj) error
+	Exists(*content.ContentObj) (bool, error)
 }
 
 func NewContentDB(source string, name string) (ContentDB, error) {

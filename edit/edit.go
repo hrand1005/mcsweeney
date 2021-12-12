@@ -3,8 +3,10 @@ package edit
 import (
 	"fmt"
 	"github.com/nicklaw5/helix"
+    "mcsweeney/content"
 	"os"
 	"os/exec"
+    "path/filepath"
 	"strings"
 	"time"
 )
@@ -18,26 +20,28 @@ const (
 
 // TODO: replace this with a ffmpeg library dear god
 // TODO: goroutines!
-func ApplyOverlay(clips []helix.Clip) error {
+func ApplyOverlay(contentObjs []*content.ContentObj) error {
 	f, err := os.Create("clips.txt")
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	for _, v := range clips {
+	for _, v := range contentObjs {
 		// create overlay
-		overlayText := fmt.Sprintf("text='%s\n%s':", v.Title, v.BroadcasterName)
+		overlayText := fmt.Sprintf("text='%s\n%s':", v.Title, v.CreatorName)
 		overlayArg := drawtextFont + overlayText + drawtextProperties
 
 		// create paths
-		filename := getClipPath(&v)
-		rawPath := RawVidsDir + filename
+        fmt.Println("Attempting to find clip at path: %s", v.Path)
+		filename := filepath.Base(v.Path)
+        fmt.Println("Applying overlay to filename: ", filename)
 		processedPath := ProcessedVidsDir + filename
 
 		// create and execute command
-		args := []string{"-i", rawPath, "-vf", overlayArg, "-codec:a", "copy", processedPath}
+		args := []string{"-i", v.Path, "-vf", overlayArg, "-codec:a", "copy", processedPath}
 		ffmpegCmd := exec.Command("ffmpeg", args...)
+        fmt.Printf("Attempting to run ffmpeg command: %s", ffmpegCmd.String())
 		err := ffmpegCmd.Run()
 		if err != nil {
 			fmt.Printf("Failed to execute ffmpeg cmd: %v\n", err)
