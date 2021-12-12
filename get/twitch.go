@@ -20,12 +20,11 @@ const (
 
 type TwitchGetter struct {
 	client *helix.Client
-	db     db.ContentDB
 	query  *helix.ClipsParams
 	token  string
 }
 
-func NewTwitchGetter(c config.Config, db db.ContentDB) (*TwitchGetter, error) {
+func NewTwitchGetter(c config.Config) (*TwitchGetter, error) {
 	client, err := helix.NewClient(&helix.Options{
 		ClientID: c.ClientID,
 	})
@@ -39,14 +38,13 @@ func NewTwitchGetter(c config.Config, db db.ContentDB) (*TwitchGetter, error) {
 
 	return &TwitchGetter{
 		client: client,
-		db:     db,
 		query:  query,
 		token:  c.Token,
 	}, nil
 }
 
 // TODO: change this to return a content interface
-func (t *TwitchGetter) GetContent() ([]helix.Clip, error) {
+func (t *TwitchGetter) GetContent(db db.ContentDB) ([]helix.Clip, error) {
 	t.client.SetUserAccessToken(t.token)
 	defer t.client.SetUserAccessToken("")
 
@@ -63,13 +61,13 @@ func (t *TwitchGetter) GetContent() ([]helix.Clip, error) {
 
 	cleanClips := make([]helix.Clip, 0, len(dirtyClips))
 	for _, v := range dirtyClips {
-		exists, err := t.db.Exists(v.URL)
+		exists, err := db.Exists(v.URL)
 		if err != nil {
 			return nil, err
 		}
 		if !exists {
 			cleanClips = append(cleanClips, v)
-			err = t.db.Insert(v.URL)
+			err = db.Insert(v.URL)
 			if err != nil {
 				return nil, err
 			}

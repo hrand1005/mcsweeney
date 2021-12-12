@@ -40,13 +40,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	getIntf, err := get.NewContentGetter(*c, dbIntf)
+	getIntf, err := get.NewContentGetter(*c)
 	if err != nil {
 		fmt.Println("Couldn't create content-getter.")
 		log.Fatal(err)
 	}
 
-	content, err := getIntf.GetContent()
+	content, err := getIntf.GetContent(dbIntf)
 	if err != nil {
 		fmt.Println("Couldn't get new content.")
 		log.Fatal(err)

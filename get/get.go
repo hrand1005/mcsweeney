@@ -12,13 +12,13 @@ const TWITCH = "twitch"
 
 // TODO: generic content object or interface
 type ContentGetter interface {
-	GetContent() ([]helix.Clip, error)
+	GetContent(db.ContentDB) ([]helix.Clip, error)
 }
 
-func NewContentGetter(c config.Config, db db.ContentDB) (ContentGetter, error) {
+func NewContentGetter(c config.Config) (ContentGetter, error) {
 	switch c.Source {
 	case TWITCH:
-		return NewTwitchGetter(c, db)
+		return NewTwitchGetter(c)
 	default:
 		return nil, fmt.Errorf("No such content-getter '%s'", c.Source)
 	}

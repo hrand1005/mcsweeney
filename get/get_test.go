@@ -39,7 +39,7 @@ func TestNewContentGetter(t *testing.T) {
 
 	for _, tc := range testCases {
 		// t.Run(tt.name, func(t *testing.T) {
-		gotGetter, gotErr := get.NewContentGetter(tc.config, nil)
+		gotGetter, gotErr := get.NewContentGetter(tc.config)
 		assert.Equal(t, reflect.TypeOf(gotGetter), reflect.TypeOf(tc.wantGetter))
 		assert.Equal(t, errors.Unwrap(gotErr), errors.Unwrap(tc.wantErr))
 	}
