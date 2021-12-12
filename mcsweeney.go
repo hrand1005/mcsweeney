@@ -8,7 +8,7 @@ package main
 - Goroutines
 - Decide on a standard for where to use pointers vs struct values
 - Url or URL, not both
-- Content obj methods? Or limit info passed around? 
+- Content obj methods? Or limit info passed around?
 */
 
 //TODO: maybe we don't need the entire packages?

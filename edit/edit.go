@@ -3,10 +3,10 @@ package edit
 import (
 	"fmt"
 	"github.com/nicklaw5/helix"
-    "mcsweeney/content"
+	"mcsweeney/content"
 	"os"
 	"os/exec"
-    "path/filepath"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -33,15 +33,15 @@ func ApplyOverlay(contentObjs []*content.ContentObj) error {
 		overlayArg := drawtextFont + overlayText + drawtextProperties
 
 		// create paths
-        fmt.Println("Attempting to find clip at path: %s", v.Path)
+		fmt.Println("Attempting to find clip at path: %s", v.Path)
 		filename := filepath.Base(v.Path)
-        fmt.Println("Applying overlay to filename: ", filename)
+		fmt.Println("Applying overlay to filename: ", filename)
 		processedPath := ProcessedVidsDir + filename
 
 		// create and execute command
 		args := []string{"-i", v.Path, "-vf", overlayArg, "-codec:a", "copy", processedPath}
 		ffmpegCmd := exec.Command("ffmpeg", args...)
-        fmt.Printf("Attempting to run ffmpeg command: %s", ffmpegCmd.String())
+		fmt.Printf("Attempting to run ffmpeg command: %s", ffmpegCmd.String())
 		err := ffmpegCmd.Run()
 		if err != nil {
 			fmt.Printf("Failed to execute ffmpeg cmd: %v\n", err)

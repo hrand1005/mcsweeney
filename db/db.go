@@ -2,7 +2,7 @@ package db
 
 import (
 	"fmt"
-    "mcsweeney/content"
+	"mcsweeney/content"
 )
 
 const TWITCH = "twitch"

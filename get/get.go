@@ -3,7 +3,7 @@ package get
 import (
 	"fmt"
 	"mcsweeney/config"
-    "mcsweeney/content"
+	"mcsweeney/content"
 	"mcsweeney/db"
 )
 

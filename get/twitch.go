@@ -5,7 +5,7 @@ import (
 	"github.com/nicklaw5/helix"
 	"io"
 	"mcsweeney/config"
-    "mcsweeney/content"
+	"mcsweeney/content"
 	"mcsweeney/db"
 	"net/http"
 	"os"
@@ -55,7 +55,7 @@ func (t *TwitchGetter) GetContent(db db.ContentDB) ([]*content.ContentObj, error
 		return nil, err
 	}
 
-    // TODO: convert to contentObjs here?
+	// TODO: convert to contentObjs here?
 	dirtyClips := twitchResp.Data.Clips
 	if err != nil || len(dirtyClips) == 0 {
 		return nil, fmt.Errorf("Couldn't get clips: %v", err)
@@ -63,7 +63,7 @@ func (t *TwitchGetter) GetContent(db db.ContentDB) ([]*content.ContentObj, error
 
 	newContent := make([]*content.ContentObj, 0, len(dirtyClips))
 	for _, v := range dirtyClips {
-        contentObj, err := convertClipToContentObj(&v)
+		contentObj, err := convertClipToContentObj(&v)
 		exists, err := db.Exists(contentObj)
 		if err != nil {
 			return nil, err
@@ -75,14 +75,14 @@ func (t *TwitchGetter) GetContent(db db.ContentDB) ([]*content.ContentObj, error
 				return nil, err
 			}
 			// TODO: spawn goroutines here?
-            // TODO: method on content obj? Or should it be here?
+			// TODO: method on content obj? Or should it be here?
 			err = downloadContent(contentObj)
 			if err != nil {
 				return nil, err
 			}
-            // Indicate that the content has been downloaded to local machine
-            // TODO: method?
-            contentObj.Status = content.RAW
+			// Indicate that the content has been downloaded to local machine
+			// TODO: method?
+			contentObj.Status = content.RAW
 		}
 	}
 	if len(newContent) == 0 {
@@ -104,7 +104,7 @@ func downloadContent(contentObj *content.ContentObj) error {
 
 	filename := strings.SplitN(contentObj.Url, "twitch.tv", 2)[1]
 	outFile := RawVidsDir + filename
-    contentObj.Path = outFile
+	contentObj.Path = outFile
 
 	out, err := os.Create(outFile)
 	defer out.Close()
@@ -118,11 +118,11 @@ func downloadContent(contentObj *content.ContentObj) error {
 }
 
 func convertClipToContentObj(clip *helix.Clip) (*content.ContentObj, error) {
-    c := &content.ContentObj{}
-    thumbUrl := clip.ThumbnailURL
+	c := &content.ContentObj{}
+	thumbUrl := clip.ThumbnailURL
 	c.Url = strings.SplitN(thumbUrl, "-preview", 2)[0] + ".mp4"
-    c.CreatorName = clip.BroadcasterName
-    c.Title = clip.Title
+	c.CreatorName = clip.BroadcasterName
+	c.Title = clip.Title
 
-    return c, nil
+	return c, nil
 }
