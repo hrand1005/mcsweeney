@@ -3,20 +3,11 @@ package get
 import (
 	"fmt"
 	"github.com/nicklaw5/helix"
-	"io"
 	"mcsweeney/config"
 	"mcsweeney/content"
 	"mcsweeney/db"
-	"net/http"
-	"os"
 	"strings"
 	//"sync"
-)
-
-// TODO: remove duplicate
-const (
-	RawVidsDir       = "tmp/raw"
-	ProcessedVidsDir = "tmp/processed"
 )
 
 type TwitchGetter struct {
@@ -55,7 +46,6 @@ func (t *TwitchGetter) GetContent(db db.ContentDB) ([]*content.ContentObj, error
 		return nil, err
 	}
 
-	// TODO: convert to contentObjs here?
 	dirtyClips := twitchResp.Data.Clips
 	if err != nil || len(dirtyClips) == 0 {
 		return nil, fmt.Errorf("Couldn't get clips: %v", err)
@@ -74,15 +64,6 @@ func (t *TwitchGetter) GetContent(db db.ContentDB) ([]*content.ContentObj, error
 			if err != nil {
 				return nil, err
 			}
-			// TODO: spawn goroutines here?
-			// TODO: method on content obj? Or should it be here?
-			err = downloadContent(contentObj)
-			if err != nil {
-				return nil, err
-			}
-			// Indicate that the content has been downloaded to local machine
-			// TODO: method?
-			contentObj.Status = content.RAW
 		}
 	}
 	if len(newContent) == 0 {
@@ -91,30 +72,6 @@ func (t *TwitchGetter) GetContent(db db.ContentDB) ([]*content.ContentObj, error
 	fmt.Printf("Downloaded %v new clips.\n", len(newContent))
 
 	return newContent, nil
-}
-
-func downloadContent(contentObj *content.ContentObj) error {
-	fmt.Println("Downloading new clip: ", contentObj.Url)
-
-	resp, err := http.Get(contentObj.Url)
-	defer resp.Body.Close()
-	if err != nil {
-		return err
-	}
-
-	filename := strings.SplitN(contentObj.Url, "twitch.tv", 2)[1]
-	outFile := RawVidsDir + filename
-	contentObj.Path = outFile
-
-	out, err := os.Create(outFile)
-	defer out.Close()
-	if err != nil {
-		return err
-	}
-
-	_, err = io.Copy(out, resp.Body)
-
-	return err
 }
 
 func convertClipToContentObj(clip *helix.Clip) (*content.ContentObj, error) {

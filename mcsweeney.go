@@ -54,6 +54,14 @@ func main() {
 		log.Fatal(err)
 	}
 
+	for _, v := range content {
+		err = v.Download(RawVidsDir)
+		if err != nil {
+			fmt.Println("Couldn't download content.")
+			log.Fatal(err)
+		}
+	}
+
 	//s.EditContent()
 	err = edit.ApplyOverlay(content)
 	if err != nil {

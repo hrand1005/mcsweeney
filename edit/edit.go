@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -68,15 +67,6 @@ func Compile() error {
 	}
 
 	return nil
-}
-
-//TODO: get rid of this
-func getClipPath(clip *helix.Clip) string {
-	thumbURL := clip.ThumbnailURL
-	mp4URL := strings.SplitN(thumbURL, "-preview", 2)[0] + ".mp4"
-	filename := strings.SplitN(mp4URL, "twitch.tv", 2)[1]
-
-	return filename
 }
 
 // some of that experimental stuff
