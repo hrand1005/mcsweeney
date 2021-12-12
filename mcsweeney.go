@@ -16,8 +16,8 @@ import (
 	"fmt"
 	"log"
 	"mcsweeney/config"
+	"mcsweeney/content"
 	"mcsweeney/db"
-	"mcsweeney/edit"
 	"mcsweeney/get"
 	"mcsweeney/share"
 	//"sync"
@@ -48,29 +48,29 @@ func main() {
 		log.Fatal(err)
 	}
 
-	content, err := getIntf.GetContent(dbIntf)
+	contentObjs, err := getIntf.GetContent(dbIntf)
 	if err != nil {
 		fmt.Println("Couldn't get new content.")
 		log.Fatal(err)
 	}
 
-	for _, v := range content {
+	for _, v := range contentObjs {
+		// TODO: go func() for all this
 		err = v.Download(RawVidsDir)
 		if err != nil {
 			fmt.Println("Couldn't download content.")
 			log.Fatal(err)
 		}
-	}
-
-	//s.EditContent()
-	err = edit.ApplyOverlay(content)
-	if err != nil {
-		fmt.Println("Couldn't edit some content.")
-		log.Fatal(err)
+		err = v.ApplyOverlay(ProcessedVidsDir)
+		if err != nil {
+			fmt.Println("Couldn't edit content.")
+			log.Fatal(err)
+		}
 	}
 
 	//s.CompileContent()
-	err = edit.Compile()
+	// TODO: this should probably take []*contentObj
+	err = content.Compile(contentObjs)
 	if err != nil {
 		fmt.Println("Couldn't compile content.")
 		log.Fatal(err)
