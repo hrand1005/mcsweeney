@@ -71,10 +71,9 @@ func (c *ContentObj) ApplyOverlay(outDir string) error {
 	// create and execute command
 	args := []string{"-i", c.Path, "-vf", overlayArg, "-codec:a", "copy", processedPath}
 	ffmpegCmd := exec.Command("ffmpeg", args...)
-	fmt.Printf("Attempting to run ffmpeg command: %s", ffmpegCmd.String())
 	err := ffmpegCmd.Run()
 	if err != nil {
-		fmt.Printf("Failed to execute ffmpeg cmd: %v\n", err)
+		fmt.Errorf("Failed to execute ffmpeg cmd: %v\n", err)
 	}
 
 	c.Path = processedPath
@@ -91,8 +90,16 @@ func Compile(contentObjs []*ContentObj) error {
 	defer f.Close()
 
 	for _, v := range contentObjs {
+		// encode content to consistent format
+		encodedPath := v.Path[:len(v.Path)-4] + ".mkv"
+		cmd := exec.Command("ffmpeg", "-i", v.Path, "-c:v", "libx264", "-preset", "slow", "-crf", "22", "-c:a", "copy", encodedPath)
+		err = cmd.Run()
+		if err != nil {
+			return fmt.Errorf("Failed to encode path %s: %v\n", encodedPath, err)
+		}
+
 		// write to txt file
-		w := fmt.Sprintf("file '%s'\n", v.Path)
+		w := fmt.Sprintf("file '%s'\n", encodedPath)
 		_, err = f.WriteString(w)
 		if err != nil {
 			return err
@@ -103,7 +110,7 @@ func Compile(contentObjs []*ContentObj) error {
 	cmd := exec.Command("ffmpeg", args...)
 	err = cmd.Run()
 	if err != nil {
-		fmt.Printf("Failed to execute ffmpeg cmd: %v\n", err)
+		return fmt.Errorf("Failed to execute ffmpeg cmd: %v\n", err)
 	}
 
 	return nil

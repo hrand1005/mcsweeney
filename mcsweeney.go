@@ -9,6 +9,8 @@ package main
 - Decide on a standard for where to use pointers vs struct values
 - Url or URL, not both
 - Content obj methods? Or limit info passed around?
+- Encode videos consistently
+- Take data streams and do things with them for faster editing?
 */
 
 //TODO: maybe we don't need the entire packages?
