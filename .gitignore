@@ -15,7 +15,7 @@
 # vendor/
 
 example.yaml
-clips.txt
+compile.txt
 
 client_secret.json
 *.mp4
