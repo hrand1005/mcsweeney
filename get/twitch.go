@@ -16,7 +16,7 @@ type TwitchGetter struct {
 	token  string
 }
 
-func NewTwitchGetter(c config.Config) (*TwitchGetter, error) {
+func NewTwitchGetter(c *config.Config) (*TwitchGetter, error) {
 	client, err := helix.NewClient(&helix.Options{
 		ClientID: c.ClientID,
 	})
@@ -35,7 +35,6 @@ func NewTwitchGetter(c config.Config) (*TwitchGetter, error) {
 	}, nil
 }
 
-// TODO: change this to return a content interface
 func (t *TwitchGetter) GetContent(db db.ContentDB) ([]*content.ContentObj, error) {
 	t.client.SetUserAccessToken(t.token)
 	defer t.client.SetUserAccessToken("")

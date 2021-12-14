@@ -82,10 +82,10 @@ func (c *ContentObj) ApplyOverlay(outDir string) error {
 	return nil
 }
 
-func Compile(contentObjs []*ContentObj) error {
-	f, err := os.Create("clips.txt")
+func Compile(contentObjs []*ContentObj) (*ContentObj, error) {
+	f, err := os.Create("compile.txt")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer f.Close()
 
@@ -95,23 +95,26 @@ func Compile(contentObjs []*ContentObj) error {
 		cmd := exec.Command("ffmpeg", "-i", v.Path, "-c:v", "libx264", "-preset", "slow", "-crf", "22", "-c:a", "copy", encodedPath)
 		err = cmd.Run()
 		if err != nil {
-			return fmt.Errorf("Failed to encode path %s: %v\n", encodedPath, err)
+			return nil, fmt.Errorf("Failed to encode path %s: %v\n", encodedPath, err)
 		}
 
 		// write to txt file
 		w := fmt.Sprintf("file '%s'\n", encodedPath)
 		_, err = f.WriteString(w)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	args := []string{"-f", "concat", "-safe", "0", "-i", "clips.txt", "compiled-vid.mp4"}
+	outfile := "compiled-vid.mp4"
+	args := []string{"-f", "concat", "-safe", "0", "-i", "clips.txt", outfile}
 	cmd := exec.Command("ffmpeg", args...)
 	err = cmd.Run()
 	if err != nil {
-		return fmt.Errorf("Failed to execute ffmpeg cmd: %v\n", err)
+		return nil, fmt.Errorf("Failed to execute ffmpeg cmd: %v\n", err)
 	}
 
-	return nil
+	return &ContentObj{
+		Path: outfile,
+	}, nil
 }

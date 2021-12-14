@@ -31,7 +31,6 @@ const (
 )
 
 func main() {
-	// Get config from yaml file
 	c, err := config.NewConfig("config/example.yaml")
 	if err != nil {
 		fmt.Println("Couldn't load config.")
@@ -44,7 +43,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	getIntf, err := get.NewContentGetter(*c)
+	getIntf, err := get.NewContentGetter(c)
 	if err != nil {
 		fmt.Println("Couldn't create content-getter.")
 		log.Fatal(err)
@@ -70,15 +69,13 @@ func main() {
 		}
 	}
 
-	//s.CompileContent()
-	// TODO: this should probably take []*contentObj
-	err = content.Compile(contentObjs)
+	finalProduct, err := content.Compile(contentObjs)
 	if err != nil {
 		fmt.Println("Couldn't compile content.")
 		log.Fatal(err)
 	}
 
-	shareIntf, err := share.NewContentSharer(*c, "compiled-vid.mp4")
+	shareIntf, err := share.NewContentSharer(c, finalProduct)
 	if err != nil {
 		fmt.Println("Couldn't create content-sharer.")
 		log.Fatal(err)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"google.golang.org/api/youtube/v3"
 	"mcsweeney/config"
+	"mcsweeney/content"
 	"os"
 	"strings"
 )
@@ -17,11 +18,11 @@ type YoutubeSharer struct {
 	privacy     string
 }
 
-func NewYoutubeSharer(c config.Config, path string) (*YoutubeSharer, error) {
+func NewYoutubeSharer(c *config.Config, v *content.ContentObj) (*YoutubeSharer, error) {
 	// TODO: validate args?
 	// TODO: should sharer object be reusable? ie should we not do this?
 	return &YoutubeSharer{
-		filename:    path,
+		filename:    v.Path,
 		title:       c.Title,
 		description: c.Description,
 		keywords:    c.Keywords,
