@@ -2,8 +2,6 @@ package content
 
 import (
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -27,56 +25,32 @@ type ContentObj struct {
 	Url         string
 }
 
-func (c *ContentObj) Download(path string) error {
-	fmt.Println("Downloading new clip: ", c.Url)
-
-	resp, err := http.Get(c.Url)
-	defer resp.Body.Close()
-	if err != nil {
-		return err
-	}
-
-	filename := strings.SplitN(c.Url, "twitch.tv", 2)[1]
-	outFile := path + filename
-	c.Path = outFile
-
-	out, err := os.Create(outFile)
-	defer out.Close()
-	if err != nil {
-		return err
-	}
-
-	_, err = io.Copy(out, resp.Body)
-	c.Status = RAW
-
-	return err
-}
-
 const (
 	drawtextFont       = `drawtext=fontfile=/usr/share/fonts/TTF/DejaVuSans.ttf:`
 	drawtextProperties = `fontcolor=white:fontsize=24:box=1:boxcolor=black@0.5:boxborderw=5:x=0:y=0`
 )
 
-// TODO: replace this with a ffmpeg library dear god
-// TODO: goroutines!
-func (c *ContentObj) ApplyOverlay(outDir string) error {
+// TODO: Decouple from download -- there should be an abstraction here
+func (c *ContentObj) ApplyOverlay(path string) error {
+	fmt.Println("Downloading new clip: ", c.Url)
 	// create overlay
 	overlayText := fmt.Sprintf("text='%s\n%s':", c.Title, c.CreatorName)
 	overlayArg := drawtextFont + overlayText + drawtextProperties
 
 	// create paths
-	filename := filepath.Base(c.Path)
-	processedPath := outDir + "/" + filename
+	filename := strings.SplitN(c.Url, "twitch.tv", 2)[1]
+	outFile := path + filename
+	c.Path = outFile
 
+	fmt.Println("Applying overlay:\n", overlayArg)
 	// create and execute command
-	args := []string{"-i", c.Path, "-vf", overlayArg, "-codec:a", "copy", processedPath}
+	args := []string{"-i", c.Url, "-vf", overlayArg, "-codec:a", "copy", c.Path}
 	ffmpegCmd := exec.Command("ffmpeg", args...)
 	err := ffmpegCmd.Run()
 	if err != nil {
 		fmt.Errorf("Failed to execute ffmpeg cmd: %v\n", err)
 	}
 
-	c.Path = processedPath
 	c.Status = PROCESSED
 
 	return nil
@@ -90,24 +64,29 @@ func Compile(contentObjs []*ContentObj) (*ContentObj, error) {
 	defer f.Close()
 
 	for _, v := range contentObjs {
-		// encode content to consistent format
-		encodedPath := v.Path[:len(v.Path)-4] + ".mkv"
-		cmd := exec.Command("ffmpeg", "-i", v.Path, "-c:v", "libx264", "-preset", "slow", "-crf", "22", "-c:a", "copy", encodedPath)
-		err = cmd.Run()
+		filename := filepath.Base(v.Path)
+		basename := filename[:len(filename)-4]
+		processedPath := "tmp/processed/" + basename + ".mkv"
+		cmd := exec.Command("ffmpeg", "-i", v.Path, "-c:v", "libx264", "-preset", "slow", "-crf", "22", "-c:a", "copy", processedPath)
+		fmt.Println("Encoding content to ", processedPath)
+		err := cmd.Run()
 		if err != nil {
-			return nil, fmt.Errorf("Failed to encode path %s: %v\n", encodedPath, err)
+			return nil, fmt.Errorf("Failed to download and encode to path %s: %v\n", v.Path, err)
 		}
 
+		v.Path = processedPath
+
 		// write to txt file
-		w := fmt.Sprintf("file '%s'\n", encodedPath)
+		w := fmt.Sprintf("file '%s'\n", v.Path)
 		_, err = f.WriteString(w)
 		if err != nil {
 			return nil, err
 		}
 	}
 
+	fmt.Println("Compiling content...")
 	outfile := "compiled-vid.mp4"
-	args := []string{"-f", "concat", "-safe", "0", "-i", "clips.txt", outfile}
+	args := []string{"-f", "concat", "-safe", "0", "-i", "compile.txt", outfile}
 	cmd := exec.Command("ffmpeg", args...)
 	err = cmd.Run()
 	if err != nil {

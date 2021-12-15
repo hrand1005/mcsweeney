@@ -57,14 +57,9 @@ func main() {
 
 	for _, v := range contentObjs {
 		// TODO: go func() for all this
-		err = v.Download(RawVidsDir)
+		err = v.ApplyOverlay(RawVidsDir)
 		if err != nil {
 			fmt.Println("Couldn't download content.")
-			log.Fatal(err)
-		}
-		err = v.ApplyOverlay(ProcessedVidsDir)
-		if err != nil {
-			fmt.Println("Couldn't edit content.")
 			log.Fatal(err)
 		}
 	}
