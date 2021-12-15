@@ -7,6 +7,7 @@ import (
 	"mcsweeney/content"
 	"mcsweeney/db"
 	"strings"
+	"time"
 	//"sync"
 )
 
@@ -23,9 +24,9 @@ func NewTwitchGetter(c *config.Config) (*TwitchGetter, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Couldn't create TwitchGetter: %v", err)
 	}
-	query := &helix.ClipsParams{
-		GameID: c.GameID,
-		First:  c.First,
+	query, err := buildQuery(c.GameID, c.First, c.StartTime)
+	if err != nil {
+		return nil, fmt.Errorf("Couldn't build query for TwitchGetter: %v", err)
 	}
 
 	return &TwitchGetter{
@@ -71,6 +72,20 @@ func (t *TwitchGetter) GetContent(db db.ContentDB) ([]*content.ContentObj, error
 	fmt.Printf("Downloaded %v new clips.\n", len(newContent))
 
 	return newContent, nil
+}
+
+func buildQuery(gameId string, first int, start string) (*helix.ClipsParams, error) {
+	var startTimeFormatted time.Time
+	switch start {
+	case "yesterday":
+		startTimeFormatted = time.Now().AddDate(0, 0, -1)
+	}
+
+	return &helix.ClipsParams{
+		GameID:    gameId,
+		First:     first,
+		StartedAt: helix.Time{startTimeFormatted},
+	}, nil
 }
 
 func convertClipToContentObj(clip *helix.Clip) (*content.ContentObj, error) {

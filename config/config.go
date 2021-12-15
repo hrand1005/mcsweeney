@@ -13,6 +13,7 @@ type Config struct {
 	Token       string `yaml:"token"`
 	GameID      string `yaml:"gameID"`
 	First       int    `yaml:"first"`
+	StartTime   string `yaml:"started_at"`
 	Destination string `yaml:"destination"`
 	Title       string `yaml:"title"`
 	Description string `yaml:"description"`

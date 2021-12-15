@@ -56,6 +56,7 @@ func (c *ContentObj) ApplyOverlay(path string) error {
 	return nil
 }
 
+// TODO: decouple encoding from compiling step
 func Compile(contentObjs []*ContentObj) (*ContentObj, error) {
 	f, err := os.Create("compile.txt")
 	if err != nil {
