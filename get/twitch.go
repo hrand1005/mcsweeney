@@ -90,10 +90,11 @@ func buildQuery(gameId string, first int, start string) (*helix.ClipsParams, err
 
 func convertClipToContentObj(clip *helix.Clip) (*content.ContentObj, error) {
 	c := &content.ContentObj{}
-	thumbUrl := clip.ThumbnailURL
-	c.Url = strings.SplitN(thumbUrl, "-preview", 2)[0] + ".mp4"
+
 	c.CreatorName = clip.BroadcasterName
+	c.Duration = clip.Duration
 	c.Title = clip.Title
+	c.Url = strings.SplitN(clip.ThumbnailURL, "-preview", 2)[0] + ".mp4"
 
 	return c, nil
 }

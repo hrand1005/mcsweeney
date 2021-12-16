@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 )
 
@@ -18,46 +17,58 @@ const (
 
 type ContentObj struct {
 	CreatorName string
-	Title       string
 	Description string
+	Duration    float64
 	Path        string
 	Status      ContentStatus
+	Title       string
 	Url         string
 }
 
 const (
-	drawtextFont       = `drawtext=fontfile=/usr/share/fonts/TTF/DejaVuSans.ttf:`
+	duration           = 4
+	drawtextTimeA      = `drawtext=enable='between(t,`
+	drawtextTimeB      = `)':`
+	drawtextFont       = `fontfile=/usr/share/fonts/TTF/DejaVuSans.ttf:`
 	drawtextProperties = `fontcolor=white:fontsize=24:box=1:boxcolor=black@0.5:boxborderw=5:x=0:y=0`
 )
 
 // TODO: Decouple from download -- there should be an abstraction here
-func (c *ContentObj) ApplyOverlay(path string) error {
-	fmt.Println("Downloading new clip: ", c.Url)
-	// create overlay
-	overlayText := fmt.Sprintf("text='%s\n%s':", c.Title, c.CreatorName)
-	overlayArg := drawtextFont + overlayText + drawtextProperties
+func ApplyOverlay(contentObjs []*ContentObj, contentPath string) error {
+	var cursor float64
+	var allFilters string
+	for i, v := range contentObjs {
+		// create drawtextTime
+		timeA := cursor + 1.0
+		timeB := cursor + 5.0
+		drawtextTime := fmt.Sprintf("%s%f,%f%s", drawtextTimeA, timeA, timeB, drawtextTimeB)
 
-	// create paths
-	filename := strings.SplitN(c.Url, "twitch.tv", 2)[1]
-	outFile := path + filename
-	c.Path = outFile
+		// create overlay
+		overlayText := fmt.Sprintf("text='%s\n%s':", v.Title, v.CreatorName)
+		fullOverlay := drawtextTime + drawtextFont + overlayText + drawtextProperties
+		allFilters += fullOverlay
+		if i < len(contentObjs)-1 {
+			allFilters += ","
+		}
 
-	fmt.Println("Applying overlay:\n", overlayArg)
+		// move cursor
+		cursor += v.Duration
+	}
+
 	// create and execute command
-	args := []string{"-i", c.Url, "-vf", overlayArg, "-codec:a", "copy", c.Path}
+	args := []string{"-i", contentPath, "-vf", allFilters, "-codec:a", "copy", "finished-vid.mp4"}
 	ffmpegCmd := exec.Command("ffmpeg", args...)
+	fmt.Println("Running ffmpeg command:\n%s", ffmpegCmd.String())
 	err := ffmpegCmd.Run()
 	if err != nil {
 		fmt.Errorf("Failed to execute ffmpeg cmd: %v\n", err)
 	}
 
-	c.Status = PROCESSED
-
 	return nil
 }
 
 // TODO: decouple encoding from compiling step
-func Compile(contentObjs []*ContentObj) (*ContentObj, error) {
+func Compile(contentObjs []*ContentObj, outfile string) (*ContentObj, error) {
 	f, err := os.Create("compile.txt")
 	if err != nil {
 		return nil, err
@@ -65,10 +76,10 @@ func Compile(contentObjs []*ContentObj) (*ContentObj, error) {
 	defer f.Close()
 
 	for _, v := range contentObjs {
-		filename := filepath.Base(v.Path)
+		filename := strings.SplitN(v.Url, "twitch.tv", 2)[1]
 		basename := filename[:len(filename)-4]
 		processedPath := "tmp/processed/" + basename + ".mkv"
-		cmd := exec.Command("ffmpeg", "-i", v.Path, "-c:v", "libx264", "-preset", "slow", "-crf", "22", "-c:a", "copy", processedPath)
+		cmd := exec.Command("ffmpeg", "-i", v.Url, "-c:v", "libx264", "-preset", "slow", "-crf", "22", "-c:a", "copy", processedPath)
 		fmt.Println("Encoding content to ", processedPath)
 		err := cmd.Run()
 		if err != nil {
@@ -86,7 +97,6 @@ func Compile(contentObjs []*ContentObj) (*ContentObj, error) {
 	}
 
 	fmt.Println("Compiling content...")
-	outfile := "compiled-vid.mp4"
 	args := []string{"-f", "concat", "-safe", "0", "-i", "compile.txt", outfile}
 	cmd := exec.Command("ffmpeg", args...)
 	err = cmd.Run()

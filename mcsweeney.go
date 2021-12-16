@@ -21,7 +21,7 @@ import (
 	"mcsweeney/content"
 	"mcsweeney/db"
 	"mcsweeney/get"
-	"mcsweeney/share"
+	//"mcsweeney/share"
 	//"sync"
 )
 
@@ -55,34 +55,33 @@ func main() {
 		log.Fatal(err)
 	}
 
-	for _, v := range contentObjs {
-		// TODO: go func() for all this
-		err = v.ApplyOverlay(RawVidsDir)
-		if err != nil {
-			fmt.Println("Couldn't download content.")
-			log.Fatal(err)
-		}
-	}
-
-	finalProduct, err := content.Compile(contentObjs)
+	compiledVid, err := content.Compile(contentObjs, "compiled-vid.mp4")
 	if err != nil {
 		fmt.Println("Couldn't compile content.")
 		log.Fatal(err)
 	}
 
-	shareIntf, err := share.NewContentSharer(c, finalProduct)
+	err = content.ApplyOverlay(contentObjs, compiledVid.Path)
 	if err != nil {
-		fmt.Println("Couldn't create content-sharer.")
+		fmt.Println("Couldn't apply overlay.")
 		log.Fatal(err)
 	}
 
-	err = shareIntf.Share()
-	if err != nil {
-		fmt.Println("Couldn't share content.")
-		log.Fatal(err)
-	}
+	/*
+		shareIntf, err := share.NewContentSharer(c, finalProduct)
+		if err != nil {
+			fmt.Println("Couldn't create content-sharer.")
+			log.Fatal(err)
+		}
 
-	fmt.Println("Content shared successfully!")
+		err = shareIntf.Share()
+		if err != nil {
+			fmt.Println("Couldn't share content.")
+			log.Fatal(err)
+		}
+
+		fmt.Println("Content shared successfully!")
+	*/
 
 	return
 }
