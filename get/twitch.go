@@ -9,13 +9,11 @@ import (
 	"time"
 )
 
-
 type TwitchGetter struct {
 	client *helix.Client
 	query  *helix.ClipsParams
 	token  string
 }
-
 
 func NewTwitchGetter(clientID string, queryArgs config.Query, token string) (*TwitchGetter, error) {
 	client, err := helix.NewClient(&helix.Options{
@@ -36,7 +34,6 @@ func NewTwitchGetter(clientID string, queryArgs config.Query, token string) (*Tw
 	}, nil
 }
 
-
 func (t *TwitchGetter) GetContent() ([]*content.ContentObj, error) {
 	t.client.SetUserAccessToken(t.token)
 	defer t.client.SetUserAccessToken("")
@@ -45,22 +42,21 @@ func (t *TwitchGetter) GetContent() ([]*content.ContentObj, error) {
 	if err != nil {
 		return nil, err
 	}
-    // updates the 'cursor' for where to start retrieving data
-    t.query.After = twitchResp.Data.Pagination.Cursor
+	// updates the 'cursor' for where to start retrieving data
+	t.query.After = twitchResp.Data.Pagination.Cursor
 
 	clips := twitchResp.Data.Clips
 	if err != nil || len(clips) == 0 {
 		return nil, fmt.Errorf("Couldn't get clips: %v", err)
 	}
 
-    contentObjs := make([]*content.ContentObj, 0, len(clips))
+	contentObjs := make([]*content.ContentObj, 0, len(clips))
 	for _, v := range clips {
-        contentObjs = append(contentObjs, convertClipToContentObj(&v))
+		contentObjs = append(contentObjs, convertClipToContentObj(&v))
 	}
 
 	return contentObjs, nil
 }
-
 
 func buildQuery(queryArgs config.Query) (*helix.ClipsParams, error) {
 	var startTimeFormatted time.Time
@@ -76,8 +72,7 @@ func buildQuery(queryArgs config.Query) (*helix.ClipsParams, error) {
 	}, nil
 }
 
-
-func convertClipToContentObj(clip *helix.Clip) (*content.ContentObj) {
+func convertClipToContentObj(clip *helix.Clip) *content.ContentObj {
 	c := &content.ContentObj{}
 	c.CreatorName = clip.BroadcasterName
 	c.Duration = clip.Duration
