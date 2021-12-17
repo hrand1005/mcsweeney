@@ -21,9 +21,8 @@ import (
 	"mcsweeney/content"
 	"mcsweeney/db"
 	"mcsweeney/get"
-	"os"
 	//"mcsweeney/share"
-	//"sync"
+	"os"
 )
 
 const (
@@ -51,11 +50,24 @@ func main() {
 		log.Fatal(err)
 	}
 
-	contentObjs, err := getIntf.GetContent(dbIntf)
-	if err != nil {
-		fmt.Println("Couldn't get new content.")
-		log.Fatal(err)
-	}
+
+    dirtyContent, err := getIntf.GetContent()
+    if err != nil {
+        fmt.Println("Couldn't get new content.")
+        log.Fatal(err)
+    }
+
+    contentObjs := make([]*content.ContentObj, 0, len(dirtyContent))
+    for _, v := range dirtyContent {
+        exists, err := dbIntf.Exists(v)
+        if err != nil {
+            fmt.Println("Couldn't check exists for dbIntf.")
+            log.Fatal(err)
+        }
+        if !exists {
+            contentObjs = append(contentObjs, v)
+        }
+    }
 
 	compiledVid, err := content.Compile(contentObjs, "compiled-vid.mp4")
 	if err != nil {
@@ -69,21 +81,29 @@ func main() {
 		log.Fatal(err)
 	}
 
-	/*
-		shareIntf, err := share.NewContentSharer(c, finalProduct)
-		if err != nil {
-			fmt.Println("Couldn't create content-sharer.")
-			log.Fatal(err)
-		}
+    /*
+    shareIntf, err := share.NewContentSharer(c, finalProduct)
+    if err != nil {
+        fmt.Println("Couldn't create content-sharer.")
+        log.Fatal(err)
+    }
 
-		err = shareIntf.Share()
-		if err != nil {
-			fmt.Println("Couldn't share content.")
-			log.Fatal(err)
-		}
+    err = shareIntf.Share()
+    if err != nil {
+        fmt.Println("Couldn't share content.")
+        log.Fatal(err)
+    }
+    */
 
-		fmt.Println("Content shared successfully!")
-	*/
+    //fmt.Println("Content shared successfully!")
+
+    for _, v := range contentObjs {
+        err := dbIntf.Insert(v)
+        if err != nil {
+            fmt.Println("Couldn't insert to dbIntf.")
+            log.Fatal(err)
+        }
+    }
 
 	return
 }

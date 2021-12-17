@@ -5,11 +5,10 @@ import (
 	"github.com/nicklaw5/helix"
 	"mcsweeney/config"
 	"mcsweeney/content"
-	"mcsweeney/db"
 	"strings"
 	"time"
-	//"sync"
 )
+
 
 type TwitchGetter struct {
 	client *helix.Client
@@ -17,14 +16,15 @@ type TwitchGetter struct {
 	token  string
 }
 
-func NewTwitchGetter(c *config.Config) (*TwitchGetter, error) {
+
+func NewTwitchGetter(clientID string, queryArgs config.Query, token string) (*TwitchGetter, error) {
 	client, err := helix.NewClient(&helix.Options{
-		ClientID: c.ClientID,
+		ClientID: clientID,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Couldn't create TwitchGetter: %v", err)
+		return nil, fmt.Errorf("Couldn't create client: %v", err)
 	}
-	query, err := buildQuery(c.GameID, c.First, c.StartTime)
+	query, err := buildQuery(queryArgs)
 	if err != nil {
 		return nil, fmt.Errorf("Couldn't build query for TwitchGetter: %v", err)
 	}
@@ -32,69 +32,57 @@ func NewTwitchGetter(c *config.Config) (*TwitchGetter, error) {
 	return &TwitchGetter{
 		client: client,
 		query:  query,
-		token:  c.Token,
+		token:  token,
 	}, nil
 }
 
-func (t *TwitchGetter) GetContent(db db.ContentDB) ([]*content.ContentObj, error) {
+
+func (t *TwitchGetter) GetContent() ([]*content.ContentObj, error) {
 	t.client.SetUserAccessToken(t.token)
 	defer t.client.SetUserAccessToken("")
 
-	// Execute query for clips, TODO: more error checking here?
 	twitchResp, err := t.client.GetClips(t.query)
 	if err != nil {
 		return nil, err
 	}
+    // updates the 'cursor' for where to start retrieving data
+    t.query.After = twitchResp.Data.Pagination.Cursor
 
-	dirtyClips := twitchResp.Data.Clips
-	if err != nil || len(dirtyClips) == 0 {
+	clips := twitchResp.Data.Clips
+	if err != nil || len(clips) == 0 {
 		return nil, fmt.Errorf("Couldn't get clips: %v", err)
 	}
 
-	newContent := make([]*content.ContentObj, 0, len(dirtyClips))
-	for _, v := range dirtyClips {
-		contentObj, err := convertClipToContentObj(&v)
-		exists, err := db.Exists(contentObj)
-		if err != nil {
-			return nil, err
-		}
-		if !exists {
-			newContent = append(newContent, contentObj)
-			err = db.Insert(contentObj)
-			if err != nil {
-				return nil, err
-			}
-		}
+    contentObjs := make([]*content.ContentObj, 0, len(clips))
+	for _, v := range clips {
+        contentObjs = append(contentObjs, convertClipToContentObj(&v))
 	}
-	if len(newContent) == 0 {
-		return nil, fmt.Errorf("No new clips retrieved.")
-	}
-	fmt.Printf("Downloaded %v new clips.\n", len(newContent))
 
-	return newContent, nil
+	return contentObjs, nil
 }
 
-func buildQuery(gameId string, first int, start string) (*helix.ClipsParams, error) {
+
+func buildQuery(queryArgs config.Query) (*helix.ClipsParams, error) {
 	var startTimeFormatted time.Time
-	switch start {
+	switch queryArgs.StartTime {
 	case "yesterday":
 		startTimeFormatted = time.Now().AddDate(0, 0, -1)
 	}
 
 	return &helix.ClipsParams{
-		GameID:    gameId,
-		First:     first,
+		GameID:    queryArgs.GameID,
+		First:     queryArgs.First,
 		StartedAt: helix.Time{startTimeFormatted},
 	}, nil
 }
 
-func convertClipToContentObj(clip *helix.Clip) (*content.ContentObj, error) {
-	c := &content.ContentObj{}
 
+func convertClipToContentObj(clip *helix.Clip) (*content.ContentObj) {
+	c := &content.ContentObj{}
 	c.CreatorName = clip.BroadcasterName
 	c.Duration = clip.Duration
 	c.Title = clip.Title
 	c.Url = strings.SplitN(clip.ThumbnailURL, "-preview", 2)[0] + ".mp4"
 
-	return c, nil
+	return c
 }
