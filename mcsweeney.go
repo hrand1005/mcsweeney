@@ -21,6 +21,7 @@ import (
 	"mcsweeney/content"
 	"mcsweeney/db"
 	"mcsweeney/get"
+	"os"
 	//"mcsweeney/share"
 	//"sync"
 )
@@ -31,7 +32,8 @@ const (
 )
 
 func main() {
-	c, err := config.NewConfig("config/example.yaml")
+	// TODO: add command line parsing
+	c, err := config.NewConfig(os.Args[1])
 	if err != nil {
 		fmt.Println("Couldn't load config.")
 		log.Fatal(err)
@@ -61,7 +63,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = content.ApplyOverlay(contentObjs, compiledVid.Path)
+	err = content.ApplyOverlayWithFade(contentObjs, compiledVid.Path)
 	if err != nil {
 		fmt.Println("Couldn't apply overlay.")
 		log.Fatal(err)

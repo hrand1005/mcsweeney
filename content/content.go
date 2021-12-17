@@ -25,11 +25,26 @@ type ContentObj struct {
 	Url         string
 }
 
+func ApplyOverlayWithFade(contentObjs []*ContentObj, contentPath string) error {
+	filters := generateOveralyWithFadeArgs(contentObjs)
+
+	// create and execute command
+	args := []string{"-i", contentPath, "-vf", filters, "-codec:a", "copy", "finished-vid.mp4"}
+	ffmpegCmd := exec.Command("ffmpeg", args...)
+	fmt.Println("Running ffmpeg command:\n%s", ffmpegCmd.String())
+	err := ffmpegCmd.Run()
+	if err != nil {
+		fmt.Errorf("Failed to execute ffmpeg cmd: %v\n", err)
+	}
+
+	return nil
+}
+
 const (
 	duration           = 4
 	drawtextTimeA      = `drawtext=enable='between(t,`
 	drawtextTimeB      = `)':`
-	drawtextFont       = `fontfile=/usr/share/fonts/TTF/DejaVuSans.ttf:`
+	drawtextFont       = `fontfile=/usr/share/fonts/TTF/OptimusPrinceps.ttf:`
 	drawtextProperties = `fontcolor=white:fontsize=24:box=1:boxcolor=black@0.5:boxborderw=5:x=0:y=0`
 )
 
@@ -107,4 +122,32 @@ func Compile(contentObjs []*ContentObj, outfile string) (*ContentObj, error) {
 	return &ContentObj{
 		Path: outfile,
 	}, nil
+}
+
+// TODO: Clean this up, new generate ffmpeg command library?
+const (
+	tduration = 3.0
+	font      = `drawtext=fontfile=/usr/share/fonts/TTF/OptimusPrinceps.ttf:`
+	fontSize  = `fontsize=32:`
+	fontColor = `fontcolor=ffffff:`
+	xPos      = `x=0:`
+	yPos      = `y=(h-text_h)`
+)
+
+func generateOveralyWithFadeArgs(contentObjs []*ContentObj) (allFilters string) {
+	fade := 1.0
+	var cursor float64
+	for i, v := range contentObjs {
+		overlayText := fmt.Sprintf("text='%s\n%s':", v.Title, v.CreatorName)
+		alpha := fmt.Sprintf(`alpha='if(lt(t,%f),0,if(lt(t,%f),(t-1)/1,if(lt(t,%f),1,if(lt(t,%f),(1-(t-%f))/1,0))))':`, cursor+1.0, cursor+1.0+fade, cursor+tduration, cursor+tduration+fade, cursor+tduration)
+		fullOverlay := font + overlayText + fontSize + fontColor + alpha + xPos + yPos
+		allFilters += fullOverlay
+		if i < len(contentObjs)-1 {
+			allFilters += ","
+		}
+
+		cursor += v.Duration
+	}
+
+	return allFilters
 }
