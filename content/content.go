@@ -139,7 +139,7 @@ func generateOveralyWithFadeArgs(contentObjs []*ContentObj) (allFilters string) 
 	var cursor float64
 	for i, v := range contentObjs {
 		overlayText := fmt.Sprintf("text='%s\n%s':", v.Title, v.CreatorName)
-		alpha := fmt.Sprintf(`alpha='if(lt(t,%f),0,if(lt(t,%f),(t-1)/1,if(lt(t,%f),1,if(lt(t,%f),(1-(t-%f))/1,0))))':`, cursor+1.0, cursor+1.0+fade, cursor+tduration, cursor+tduration+fade, cursor+tduration)
+		alpha := fmt.Sprintf(`alpha='if(lt(t,%f),0,if(lt(t,%f),(t-%f)/1,if(lt(t,%f),1,if(lt(t,%f),(1-(t-%f))/1,0))))':`, cursor+1.0, cursor+1.0+fade, cursor+1.0, cursor+tduration, cursor+tduration+fade, cursor+tduration)
 		fullOverlay := font + overlayText + fontSize + fontColor + alpha + xPos + yPos
 		allFilters += fullOverlay
 		if i < len(contentObjs)-1 {
