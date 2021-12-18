@@ -13,11 +13,11 @@ type ContentGetter interface {
 	GetContent() ([]*content.ContentObj, error)
 }
 
-func NewContentGetter(c *config.Config) (ContentGetter, error) {
-	switch c.Source {
+func NewContentGetter(s config.Source) (ContentGetter, error) {
+	switch s.Platform {
 	case TWITCH:
-		return NewTwitchGetter(c.ClientID, c.Query, c.Token)
+		return NewTwitchGetter(s.Credentials, s.Query)
 	default:
-		return nil, fmt.Errorf("No such content-getter '%s'", c.Source)
+		return nil, fmt.Errorf("No such content-getter for platform '%s'", s.Platform)
 	}
 }

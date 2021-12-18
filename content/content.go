@@ -2,6 +2,7 @@ package content
 
 import (
 	"fmt"
+	"mcsweeney/config"
 	"os"
 	"os/exec"
 	"strings"
@@ -16,17 +17,17 @@ type ContentObj struct {
 	Url         string
 }
 
-func ApplyOverlayWithFade(contentObjs []*ContentObj, contentPath string) error {
-	filters := generateOverlayWithFadeArgs(contentObjs)
+func ApplyOverlay(contentObjs []*ContentObj, options config.Options, contentPath string) (string, error) {
+	filters := generateOverlayWithFadeArgs(contentObjs, options.Overlay)
 	args := []string{"-i", contentPath, "-vf", filters, "-codec:a", "copy", "finished-vid.mp4"}
 
 	ffmpegCmd := exec.Command("ffmpeg", args...)
 	err := ffmpegCmd.Run()
 	if err != nil {
-		fmt.Errorf("Failed to execute ffmpeg cmd: %v\n", err)
+		fmt.Errorf("Failed to execute ffmpeg cmd\n%s\nerr: %v\n", ffmpegCmd.String(), err)
 	}
 
-	return nil
+	return "finished-vid.mp4", nil
 }
 
 // TODO: decouple encoding from compiling step
@@ -73,16 +74,16 @@ func Compile(contentObjs []*ContentObj, outfile string) (*ContentObj, error) {
 
 // TODO: Clean this up, new generate ffmpeg command library?
 const (
-	tduration = 3.0
-	font      = `drawtext=fontfile=/usr/share/fonts/TTF/OptimusPrinceps.ttf:`
-	fontSize  = `fontsize=32:`
 	fontColor = `fontcolor=ffffff:`
 	xPos      = `x=0:`
 	yPos      = `y=(h-text_h)`
 )
 
-func generateOverlayWithFadeArgs(contentObjs []*ContentObj) (allFilters string) {
-	fade := 1.0
+func generateOverlayWithFadeArgs(contentObjs []*ContentObj, args config.Overlay) (allFilters string) {
+	fade := float64(args.Fade)
+	duration := float64(args.Duration)
+	font := fmt.Sprintf("drawtext=fontfile=%s:", args.Font)
+	fontSize := fmt.Sprintf("fontsize=%s:", args.Size)
 	var cursor float64
 	for i, v := range contentObjs {
 		// TODO: find workaround, escaping with `\'` doesn't work
@@ -90,7 +91,7 @@ func generateOverlayWithFadeArgs(contentObjs []*ContentObj) (allFilters string) 
 		creator := strings.ReplaceAll(v.CreatorName, `'`, ``)
 		overlayText := fmt.Sprintf("text='%s\n%s':", title, creator)
 		fmt.Printf("\nAppling overlay text:\n%s\n", overlayText)
-		alpha := fmt.Sprintf(`alpha='if(lt(t,%f),0,if(lt(t,%f),(t-%f)/1,if(lt(t,%f),1,if(lt(t,%f),(1-(t-%f))/1,0))))':`, cursor+1.0, cursor+1.0+fade, cursor+1.0, cursor+tduration, cursor+tduration+fade, cursor+tduration)
+		alpha := fmt.Sprintf(`alpha='if(lt(t,%f),0,if(lt(t,%f),(t-%f)/1,if(lt(t,%f),1,if(lt(t,%f),(1-(t-%f))/1,0))))':`, cursor+1.0, cursor+1.0+fade, cursor+1.0, cursor+duration, cursor+duration+fade, cursor+duration)
 		fullOverlay := font + overlayText + fontSize + fontColor + alpha + xPos + yPos
 		allFilters += fullOverlay
 		if i < len(contentObjs)-1 {

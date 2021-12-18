@@ -7,12 +7,36 @@ import (
 )
 
 // TODO: More descriptive name
+// Contains the full configuration of a content strategy
 type Config struct {
-	Source      string `yaml:"source"`
-	ClientID    string `yaml:"clientID"`
-	Token       string `yaml:"token"`
-	Query       Query  `yaml:"query"`
-	Destination string `yaml:"destination"`
+	Source      Source      `yaml:"source"`
+	Destination Destination `yaml:"destination"`
+	Options     Options     `yaml:options"`
+}
+
+// Contains required fields to pull raw content from platform
+type Source struct {
+	Platform    string      `yaml:"platform"`
+	Credentials Credentials `yaml:"credentials"`
+	Query       Query       `yaml:"query"`
+}
+
+// Contains required credentials for platform
+type Credentials struct {
+	ClientID string `yaml:"clientID"`
+	Token    string `yaml:"token"`
+}
+
+// Contains query arguments to be used to gather content
+type Query struct {
+	GameID string `yaml:"gameID"`
+	First  int    `yaml:"first"`
+	Days   int    `yaml:"days"`
+}
+
+// Contains required fields to push content to platform
+type Destination struct {
+	Platform    string `yaml:"platform"`
 	Title       string `yaml:"title"`
 	Description string `yaml:"description"`
 	Category    string `yaml:"category"`
@@ -20,13 +44,21 @@ type Config struct {
 	Privacy     string `yaml:"privacy"`
 }
 
-type Query struct {
-	GameID string `yaml:"gameID"`
-	First  int    `yaml:"first"`
-	Days   int    `yaml:"days"`
+// Contains options for content editing
+type Options struct {
+	Overlay Overlay `yaml:"overlay"`
 }
 
-func NewConfig(path string) (*Config, error) {
+// Contains configurable overlay fields
+type Overlay struct {
+	Font     string `yaml:"font"`
+	Size     string `yaml:"size"`
+	Duration int    `yaml:"duration"`
+	Fade     int    `yaml:"fade"`
+}
+
+// Loads config from given yaml file, returns Config pointer
+func LoadConfig(path string) (*Config, error) {
 	raw, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to read %s: %w", path, err)

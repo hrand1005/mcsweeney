@@ -15,22 +15,22 @@ type TwitchGetter struct {
 	token  string
 }
 
-func NewTwitchGetter(clientID string, queryArgs config.Query, token string) (*TwitchGetter, error) {
+func NewTwitchGetter(credentials config.Credentials, query config.Query) (*TwitchGetter, error) {
 	client, err := helix.NewClient(&helix.Options{
-		ClientID: clientID,
+		ClientID: credentials.ClientID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("Couldn't create client: %v", err)
 	}
-	query, err := buildQuery(queryArgs)
+	twitchQuery, err := buildQuery(query)
 	if err != nil {
 		return nil, fmt.Errorf("Couldn't build query for TwitchGetter: %v", err)
 	}
 
 	return &TwitchGetter{
 		client: client,
-		query:  query,
-		token:  token,
+		query:  twitchQuery,
+		token:  credentials.Token,
 	}, nil
 }
 
@@ -58,13 +58,13 @@ func (t *TwitchGetter) GetContent() ([]*content.ContentObj, error) {
 	return contentObjs, nil
 }
 
-func buildQuery(queryArgs config.Query) (*helix.ClipsParams, error) {
+func buildQuery(query config.Query) (*helix.ClipsParams, error) {
 	// start time for query, specified in config by 'days'
-	startTime := time.Now().AddDate(0, 0, -1*queryArgs.Days)
+	startTime := time.Now().AddDate(0, 0, -1*query.Days)
 
 	return &helix.ClipsParams{
-		GameID:    queryArgs.GameID,
-		First:     queryArgs.First,
+		GameID:    query.GameID,
+		First:     query.First,
 		StartedAt: helix.Time{startTime},
 	}, nil
 }

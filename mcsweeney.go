@@ -32,19 +32,19 @@ const (
 
 func main() {
 	// TODO: add command line parsing
-	c, err := config.NewConfig(os.Args[1])
+	c, err := config.LoadConfig(os.Args[1])
 	if err != nil {
 		fmt.Println("Couldn't load config.")
 		log.Fatal(err)
 	}
 
-	dbIntf, err := db.NewContentDB(c.Source, "mcsweeney-test.db")
+	dbIntf, err := db.NewContentDB(c.Source.Platform, "mcsweeney-test.db")
 	if err != nil {
 		fmt.Println("Couldn't create content-db.")
 		log.Fatal(err)
 	}
 
-	getIntf, err := get.NewContentGetter(c)
+	getIntf, err := get.NewContentGetter(c.Source)
 	if err != nil {
 		fmt.Println("Couldn't create content-getter.")
 		log.Fatal(err)
@@ -74,11 +74,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = content.ApplyOverlayWithFade(contentObjs, compiledVid.Path)
+	final, err := content.ApplyOverlay(contentObjs, c.Options, compiledVid.Path)
 	if err != nil {
 		fmt.Println("Couldn't apply overlay.")
 		log.Fatal(err)
 	}
+
+	fmt.Println("Final output in file: ", final)
 
 	/*
 	   shareIntf, err := share.NewContentSharer(c, finalProduct)
