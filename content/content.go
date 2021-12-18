@@ -74,16 +74,17 @@ func Compile(contentObjs []*ContentObj, outfile string) (*ContentObj, error) {
 
 // TODO: Clean this up, new generate ffmpeg command library?
 const (
-	fontColor = `fontcolor=ffffff:`
-	xPos      = `x=0:`
-	yPos      = `y=(h-text_h)`
+	xPos = `x=10:`
+	yPos = `y=(h-text_h)-10`
 )
 
 func generateOverlayWithFadeArgs(contentObjs []*ContentObj, args config.Overlay) (allFilters string) {
 	fade := float64(args.Fade)
 	duration := float64(args.Duration)
 	font := fmt.Sprintf("drawtext=fontfile=%s:", args.Font)
+	fontColor := fmt.Sprintf("fontcolor=%s:", args.Color)
 	fontSize := fmt.Sprintf("fontsize=%s:", args.Size)
+
 	var cursor float64
 	for i, v := range contentObjs {
 		// TODO: find workaround, escaping with `\'` doesn't work

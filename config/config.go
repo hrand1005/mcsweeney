@@ -53,6 +53,7 @@ type Options struct {
 type Overlay struct {
 	Font     string `yaml:"font"`
 	Size     string `yaml:"size"`
+	Color    string `yaml:"color"`
 	Duration int    `yaml:"duration"`
 	Fade     int    `yaml:"fade"`
 }
