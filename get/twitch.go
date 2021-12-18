@@ -59,16 +59,13 @@ func (t *TwitchGetter) GetContent() ([]*content.ContentObj, error) {
 }
 
 func buildQuery(queryArgs config.Query) (*helix.ClipsParams, error) {
-	var startTimeFormatted time.Time
-	switch queryArgs.StartTime {
-	case "yesterday":
-		startTimeFormatted = time.Now().AddDate(0, 0, -1)
-	}
+	// start time for query, specified in config by 'days'
+	startTime := time.Now().AddDate(0, 0, -1*queryArgs.Days)
 
 	return &helix.ClipsParams{
 		GameID:    queryArgs.GameID,
 		First:     queryArgs.First,
-		StartedAt: helix.Time{startTimeFormatted},
+		StartedAt: helix.Time{startTime},
 	}, nil
 }
 

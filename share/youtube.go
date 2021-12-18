@@ -31,14 +31,12 @@ func NewYoutubeSharer(c *config.Config, v *content.ContentObj) (*YoutubeSharer, 
 }
 
 func (y *YoutubeSharer) Share() error {
+	//TODO: perform checks on the inputs
 	if y.filename == "" {
 		return fmt.Errorf("cannot upload nil file")
 	}
-	//TODO: perform checks on the inputs
 
-	// TODO: figure out this
 	client := GetClient(youtube.YoutubeUploadScope)
-
 	service, err := youtube.New(client)
 	if err != nil {
 		return fmt.Errorf("Couldn't create youtube service: %v", err)
@@ -68,9 +66,7 @@ func (y *YoutubeSharer) Share() error {
 	if err != nil {
 		return fmt.Errorf("Couldn't upload file: %v", err)
 	}
-
 	fmt.Printf("%s uploaded successfully!\nTitle: %s\n", y.filename, y.title)
-	fmt.Printf("Response:\n%v", response)
 
 	return nil
 }

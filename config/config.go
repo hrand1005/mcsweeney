@@ -21,12 +21,11 @@ type Config struct {
 }
 
 type Query struct {
-	GameID    string `yaml:"gameID"`
-	First     int    `yaml:"first"`
-	StartTime string `yaml:"started_at"`
+	GameID string `yaml:"gameID"`
+	First  int    `yaml:"first"`
+	Days   int    `yaml:"days"`
 }
 
-// It may be appropriate to get more information than just a token
 func NewConfig(path string) (*Config, error) {
 	raw, err := ioutil.ReadFile(path)
 	if err != nil {

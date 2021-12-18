@@ -24,7 +24,6 @@ type TwitchDB struct {
 	dbHandle *sql.DB
 }
 
-// TODO: Decide -- enforce new db?
 func NewTwitchDB(filename string) (*TwitchDB, error) {
 	// Create new db file if one doesn't exist
 	_, err := os.Stat(filename)
