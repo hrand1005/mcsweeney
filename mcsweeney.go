@@ -11,6 +11,8 @@ package main
 - Content obj methods? Or limit info passed around?
 - Encode videos consistently
 - Take data streams and do things with them for faster editing?
+- content should not rely on how config happens to be implemented
+    - content should be functional as a standalone package
 */
 
 //TODO: maybe we don't need the entire packages?
@@ -42,7 +44,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	getIntf, err := content.NewGetter(c.Source)
+	query := content.Query(c.Source.Query)
+	getIntf, err := content.NewGetter(c.Source.Platform, c.Source.Credentials, query)
 	if err != nil {
 		fmt.Println("Couldn't create content-getter.")
 		log.Fatal(err)
@@ -62,7 +65,6 @@ func main() {
 			log.Fatal(err)
 		}
 		if !exists {
-			fmt.Println("Appending contentObj...")
 			contentObjs = append(contentObjs, v)
 		}
 	}

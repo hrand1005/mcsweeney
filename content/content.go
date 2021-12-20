@@ -14,6 +14,12 @@ type Content struct {
 	Url         string
 }
 
+type Query struct {
+	GameID string
+	First  int
+	Days   int
+}
+
 type Getter interface {
 	Get() ([]*Content, error)
 }
@@ -25,12 +31,12 @@ type Sharer interface {
 const TWITCH = "twitch"
 const YOUTUBE = "youtube"
 
-func NewGetter(s config.Source) (Getter, error) {
-	switch s.Platform {
+func NewGetter(platform string, credentials string, query Query) (Getter, error) {
+	switch platform {
 	case TWITCH:
-		return NewTwitchGetter(s.Credentials, s.Query)
+		return NewTwitchGetter(credentials, query)
 	default:
-		return nil, fmt.Errorf("No such content-getter for platform '%s'", s.Platform)
+		return nil, fmt.Errorf("No such content-getter for platform '%s'", platform)
 	}
 }
 

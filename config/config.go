@@ -16,15 +16,9 @@ type Config struct {
 
 // Contains required fields to pull raw content from platform
 type Source struct {
-	Platform    string      `yaml:"platform"`
-	Credentials Credentials `yaml:"credentials"`
-	Query       Query       `yaml:"query"`
-}
-
-// Contains required credentials for platform
-type Credentials struct {
-	ClientID string `yaml:"clientID"`
-	Token    string `yaml:"token"`
+	Platform    string `yaml:"platform"`
+	Credentials string `yaml:"credentials"`
+	Query       Query  `yaml:"query"`
 }
 
 // Contains query arguments to be used to gather content
