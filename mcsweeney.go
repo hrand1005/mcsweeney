@@ -20,8 +20,6 @@ import (
 	"mcsweeney/config"
 	"mcsweeney/content"
 	"mcsweeney/db"
-	"mcsweeney/get"
-	//"mcsweeney/share"
 	"os"
 )
 
@@ -38,25 +36,25 @@ func main() {
 		log.Fatal(err)
 	}
 
-	dbIntf, err := db.NewContentDB(c.Source.Platform, "mcsweeney-test.db")
+	dbIntf, err := db.New("mcsweeney-test.db")
 	if err != nil {
 		fmt.Println("Couldn't create content-db.")
 		log.Fatal(err)
 	}
 
-	getIntf, err := get.NewContentGetter(c.Source)
+	getIntf, err := content.NewGetter(c.Source)
 	if err != nil {
 		fmt.Println("Couldn't create content-getter.")
 		log.Fatal(err)
 	}
 
-	dirtyContent, err := getIntf.GetContent()
+	dirtyContent, err := getIntf.Get()
 	if err != nil {
 		fmt.Println("Couldn't get new content.")
 		log.Fatal(err)
 	}
 
-	contentObjs := make([]*content.ContentObj, 0, len(dirtyContent))
+	contentObjs := make([]*content.Content, 0, len(dirtyContent))
 	for _, v := range dirtyContent {
 		exists, err := dbIntf.Exists(v)
 		if err != nil {
@@ -64,8 +62,13 @@ func main() {
 			log.Fatal(err)
 		}
 		if !exists {
+			fmt.Println("Appending contentObj...")
 			contentObjs = append(contentObjs, v)
 		}
+	}
+	if len(contentObjs) == 0 {
+		fmt.Println("No new content found.\nExiting...")
+		return
 	}
 
 	compiledVid, err := content.Compile(contentObjs, "compiled-vid.mp4")

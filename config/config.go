@@ -11,7 +11,7 @@ import (
 type Config struct {
 	Source      Source      `yaml:"source"`
 	Destination Destination `yaml:"destination"`
-	Options     Options     `yaml:options"`
+	Options     Options     `yaml:"options"`
 }
 
 // Contains required fields to pull raw content from platform
