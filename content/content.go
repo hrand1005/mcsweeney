@@ -2,14 +2,15 @@ package content
 
 import (
 	"fmt"
-	"mcsweeney/config"
 )
 
 type Content struct {
 	CreatorName string
 	Description string
 	Duration    float64
+	Keywords    string
 	Path        string
+	Privacy     string
 	Title       string
 	Url         string
 }
@@ -25,11 +26,13 @@ type Getter interface {
 }
 
 type Sharer interface {
-	Share() error
+	Share(*Content) error
 }
 
-const TWITCH = "twitch"
-const YOUTUBE = "youtube"
+const (
+	TWITCH  = "twitch"
+	YOUTUBE = "youtube"
+)
 
 func NewGetter(platform string, credentials string, query Query) (Getter, error) {
 	switch platform {
@@ -40,11 +43,11 @@ func NewGetter(platform string, credentials string, query Query) (Getter, error)
 	}
 }
 
-func NewSharer(c *config.Config, v *Content) (Sharer, error) {
-	switch c.Destination.Platform {
+func NewSharer(platform string, credentials string) (Sharer, error) {
+	switch platform {
 	case YOUTUBE:
-		return NewYoutubeSharer(c, v)
+		return NewYoutubeSharer(credentials)
 	default:
-		return nil, fmt.Errorf("No such content-sharer '%s'", c.Destination)
+		return nil, fmt.Errorf("No such content-sharer '%s'", platform)
 	}
 }

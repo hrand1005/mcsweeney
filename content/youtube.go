@@ -3,69 +3,57 @@ package content
 import (
 	"fmt"
 	"google.golang.org/api/youtube/v3"
-	"mcsweeney/config"
+	"net/http"
 	"os"
 	"strings"
 )
 
 type YoutubeSharer struct {
-	filename    string
-	title       string
-	description string
-	category    string
-	keywords    string
-	privacy     string
+	client *http.Client
 }
 
-func NewYoutubeSharer(c *config.Config, v *Content) (*YoutubeSharer, error) {
-	// TODO: validate args?
-	// TODO: should sharer object be reusable? ie should we not do this?
+func NewYoutubeSharer(credentials string) (*YoutubeSharer, error) {
+	client := GetClient(credentials, youtube.YoutubeUploadScope)
 	return &YoutubeSharer{
-		filename:    v.Path,
-		title:       c.Destination.Title,
-		description: c.Destination.Description,
-		keywords:    c.Destination.Keywords,
-		privacy:     c.Destination.Privacy,
+		client: client,
 	}, nil
 }
 
-func (y *YoutubeSharer) Share() error {
+func (y *YoutubeSharer) Share(v *Content) error {
 	//TODO: perform checks on the inputs
-	if y.filename == "" {
+	if v.Path == "" {
 		return fmt.Errorf("cannot upload nil file")
 	}
-
-	client := GetClient(youtube.YoutubeUploadScope)
-	service, err := youtube.New(client)
+	service, err := youtube.New(y.client)
 	if err != nil {
 		return fmt.Errorf("Couldn't create youtube service: %v", err)
 	}
 
 	upload := &youtube.Video{
 		Snippet: &youtube.VideoSnippet{
-			Title:       y.title,
-			Description: y.description,
+			Title:       v.Title,
+			Description: v.Description,
 			//TODO: this might be nice :)
-			//CategoryId:  y.category,
-			Tags: strings.Split(y.keywords, ","),
+			//CategoryId:  v.CategoryID,
+			Tags: strings.Split(v.Keywords, ","),
 		},
-		Status: &youtube.VideoStatus{PrivacyStatus: y.privacy},
+		Status: &youtube.VideoStatus{PrivacyStatus: v.Privacy},
 	}
 
 	insertArgs := []string{"snippet", "status"}
 	call := service.Videos.Insert(insertArgs, upload)
 
-	file, err := os.Open(y.filename)
+	file, err := os.Open(v.Path)
 	defer file.Close()
 	if err != nil {
-		return fmt.Errorf("Couldn't open file: %s, %v", y.filename, err)
+		return fmt.Errorf("Couldn't open file: %s, %v", v.Path, err)
 	}
 
 	response, err := call.Media(file).Do()
 	if err != nil {
 		return fmt.Errorf("Couldn't upload file: %v", err)
 	}
-	fmt.Printf("%s uploaded successfully!\nTitle: %s\n", y.filename, y.title)
+	fmt.Printf("%s uploaded successfully!\nTitle: %s\n", v.Path, v.Title)
 	fmt.Println("Response: ", response)
 
 	return nil

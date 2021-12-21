@@ -31,6 +31,7 @@ type Query struct {
 // Contains required fields to push content to platform
 type Destination struct {
 	Platform    string `yaml:"platform"`
+	Credentials string `yaml:"credentials"`
 	Title       string `yaml:"title"`
 	Description string `yaml:"description"`
 	Category    string `yaml:"category"`

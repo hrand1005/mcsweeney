@@ -56,10 +56,10 @@ https://developers.google.com/api-client-library/python/guide/aaa_client_secrets
 
 // getClient uses a Context and Config to retrieve a Token
 // then generate a Client. It returns the generated Client.
-func GetClient(scope string) *http.Client {
+func GetClient(credentials, scope string) *http.Client {
 	ctx := context.Background()
 
-	b, err := ioutil.ReadFile("client_secret.json")
+	b, err := ioutil.ReadFile(credentials)
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
 	}

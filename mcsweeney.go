@@ -84,25 +84,30 @@ func main() {
 		fmt.Println("Couldn't apply overlay.")
 		log.Fatal(err)
 	}
-
 	fmt.Println("Final output in file: ", final)
 
-	/*
-	   shareIntf, err := share.NewContentSharer(c, finalProduct)
-	   if err != nil {
-	       fmt.Println("Couldn't create content-sharer.")
-	       log.Fatal(err)
-	   }
+	shareIntf, err := content.NewSharer(c.Destination.Platform, c.Destination.Credentials)
+	if err != nil {
+		fmt.Println("Couldn't create content-sharer.")
+		log.Fatal(err)
+	}
 
-	   err = shareIntf.Share()
-	   if err != nil {
-	       fmt.Println("Couldn't share content.")
-	       log.Fatal(err)
-	   }
-	*/
+	err = shareIntf.Share(&content.Content{
+		Path:        final,
+		Title:       c.Destination.Title,
+		Description: c.Destination.Description,
+		Keywords:    c.Destination.Keywords,
+		Privacy:     c.Destination.Privacy,
+	})
+	if err != nil {
+		fmt.Println("Couldn't share content.")
+		log.Fatal(err)
+	}
 
-	//fmt.Println("Content shared successfully!")
+	fmt.Println("Content shared successfully!")
 
+	// TODO: table / data for uploaded videos that can be updated at a later
+	// time with analytics
 	for _, v := range contentObjs {
 		err := dbIntf.Insert(v)
 		if err != nil {
