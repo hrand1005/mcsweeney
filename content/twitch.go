@@ -74,6 +74,8 @@ func buildQuery(query Query) *helix.ClipsParams {
 
 func convertClipToContentObj(clip *helix.Clip) (c *Content) {
 	c = &Content{}
+	c.Channel = "https://twitch.tv/" + clip.BroadcasterName
+	c.ClippedBy = clip.CreatorName
 	c.CreatorName = clip.BroadcasterName
 	c.Duration = clip.Duration
 	c.Title = clip.Title

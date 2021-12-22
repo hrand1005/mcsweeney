@@ -8,20 +8,26 @@ import (
 	"strings"
 )
 
-func ApplyOverlay(contentObjs []*Content, options config.Options, contentPath string) (string, error) {
+func (c *Content) ApplyOverlay(contentObjs []*Content, options config.Options) error {
 	filters := generateOverlayWithFadeArgs(contentObjs, options.Overlay)
-	args := []string{"-i", contentPath, "-vf", filters, "-codec:a", "copy", "finished-vid.mp4"}
+	args := []string{"-i", c.Path, "-vf", filters, "-codec:a", "copy", "finished-vid.mp4"}
 
 	ffmpegCmd := exec.Command("ffmpeg", args...)
 	err := ffmpegCmd.Run()
 	if err != nil {
-		return "", fmt.Errorf("Failed to execute ffmpeg cmd\n%s\nerr: %v\n", ffmpegCmd.String(), err)
+		return fmt.Errorf("Failed to execute ffmpeg cmd\n%s\nerr: %v\n", ffmpegCmd.String(), err)
 	}
 
-	return "finished-vid.mp4", nil
+	// update content path
+	c.Path = "finished-vid.mp4"
+
+	return nil
 }
 
 // TODO: decouple encoding from compiling step
+// Compile takes a slice of Content objects, encodes them consistently and then
+// concatenates them to create a new content object. As part of this, it credits
+// it's subobjects in the description.
 func Compile(contentObjs []*Content, outfile string) (*Content, error) {
 	f, err := os.Create("compile.txt")
 	if err != nil {
@@ -59,7 +65,8 @@ func Compile(contentObjs []*Content, outfile string) (*Content, error) {
 	}
 
 	return &Content{
-		Path: outfile,
+		Path:        outfile,
+		Description: buildCredits(contentObjs),
 	}, nil
 }
 
@@ -94,4 +101,23 @@ func generateOverlayWithFadeArgs(contentObjs []*Content, args config.Overlay) (a
 	}
 
 	return allFilters
+}
+
+func buildCredits(contentObjs []*Content) (credits string) {
+	cursor := 0.0
+	for _, v := range contentObjs {
+		// simple youtube timestamp up to 59:59
+		minutes := int(cursor) / 60
+		seconds := int(cursor) % 60
+		var timestamp string
+		if seconds < 10 {
+			timestamp = fmt.Sprintf("%v:0%v", minutes, seconds)
+		} else {
+			timestamp = fmt.Sprintf("%v:%v", minutes, seconds)
+		}
+		credits += fmt.Sprintf("\n\n%s '%s'\nStreamed by %s at %s\nClipped by %s\n", timestamp, v.Title, v.CreatorName, v.Channel, v.ClippedBy)
+		cursor += v.Duration
+	}
+
+	return
 }

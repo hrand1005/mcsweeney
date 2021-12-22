@@ -79,12 +79,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	final, err := content.ApplyOverlay(contentObjs, c.Options, compiledVid.Path)
+	err = compiledVid.ApplyOverlay(contentObjs, c.Options)
 	if err != nil {
 		fmt.Println("Couldn't apply overlay.")
 		log.Fatal(err)
 	}
-	fmt.Println("Final output in file: ", final)
 
 	shareIntf, err := content.NewSharer(c.Destination.Platform, c.Destination.Credentials)
 	if err != nil {
@@ -92,13 +91,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = shareIntf.Share(&content.Content{
-		Path:        final,
-		Title:       c.Destination.Title,
-		Description: c.Destination.Description,
-		Keywords:    c.Destination.Keywords,
-		Privacy:     c.Destination.Privacy,
-	})
+	// set final Content object's fields with config args
+	compiledVid.Title = c.Destination.Title
+	compiledVid.Description = c.Destination.Description + compiledVid.Description // appends the default credits description
+	compiledVid.Keywords = c.Destination.Keywords
+	compiledVid.Privacy = c.Destination.Privacy
+
+	err = shareIntf.Share(compiledVid)
 	if err != nil {
 		fmt.Println("Couldn't share content.")
 		log.Fatal(err)

@@ -4,7 +4,13 @@ import (
 	"fmt"
 )
 
+// TODO: Composite pattern for Content objects? --> allows us to defer
+// compilation and editing to convenient steps, better encapsulates Content
+// metadata (credits, timestamps, overlays, etc.), also enables consistent
+// interfacing with Content. Cons: adds complexity to the content object
 type Content struct {
+	Channel     string
+	ClippedBy   string
 	CreatorName string
 	Description string
 	Duration    float64
