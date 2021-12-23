@@ -15,6 +15,7 @@ type Content struct {
 	Description string
 	Duration    float64
 	Keywords    string
+	Language    string
 	Path        string
 	Privacy     string
 	Title       string

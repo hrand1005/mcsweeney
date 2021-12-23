@@ -78,6 +78,7 @@ func convertClipToContentObj(clip *helix.Clip) (c *Content) {
 	c.ClippedBy = clip.CreatorName
 	c.CreatorName = clip.BroadcasterName
 	c.Duration = clip.Duration
+	c.Language = clip.Language
 	c.Title = clip.Title
 	c.Url = strings.SplitN(clip.ThumbnailURL, "-preview", 2)[0] + ".mp4"
 

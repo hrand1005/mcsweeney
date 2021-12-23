@@ -50,46 +50,49 @@ func main() {
 		fmt.Println("Couldn't create content-getter.")
 		log.Fatal(err)
 	}
-        
-    tries := 0
-    contentObjs := make([]*content.Content, 0, c.Source.Query.First)
-    for len(contentObjs) < c.Source.Query.First {
-        tries ++
-        fmt.Printf("Have: %v, Want: %v\nGetting more content.\n", len(contentObjs), c.Source.Query.First)
-        dirtyContent, err := getIntf.Get()
-        if err != nil {
-            fmt.Println("Couldn't get new content.")
-            log.Fatal(err)
-        }
-        if len(dirtyContent) == 0 {
-            fmt.Println("Content getter dry...")
-            break
-        }
 
-        for _, v := range dirtyContent {
-            exists, err := dbIntf.Exists(v)
-            if err != nil {
-                fmt.Println("Couldn't check exists for dbIntf.")
-                log.Fatal(err)
-            }
-            if !exists && len(contentObjs) < c.Source.Query.First {
-                // Log this...
-                contentObjs = append(contentObjs, v)
-            } 
-            // Log this...
-            /*else {
-                fmt.Printf("Content exists: %s\n", v.Url)
-            }*/
-        }
-    }
+	tries := 0
+	contentObjs := make([]*content.Content, 0, c.Source.Query.First)
+	for len(contentObjs) < c.Source.Query.First {
+		tries++
+		fmt.Printf("Have: %v, Want: %v\nGetting more content.\n", len(contentObjs), c.Source.Query.First)
+		dirtyContent, err := getIntf.Get()
+		if err != nil {
+			fmt.Println("Couldn't get new content.")
+			log.Fatal(err)
+		}
+		if len(dirtyContent) == 0 {
+			fmt.Println("Content getter dry...")
+			break
+		}
 
-    if len(contentObjs) == 0 {
-        fmt.Println("Unable to find new content.\nExiting...")
-        return
-    }
-    // Log this...
-    fmt.Printf("Was able to retrieve %v content objects.\n", len(contentObjs))
-    fmt.Println("Number of tries: ", tries)
+		for _, v := range dirtyContent {
+			exists, err := dbIntf.Exists(v)
+			if err != nil {
+				fmt.Println("Couldn't check exists for dbIntf.")
+				log.Fatal(err)
+			}
+			if !exists && len(contentObjs) < c.Source.Query.First {
+				valid := checkFilters(v, c.Filters)
+				if valid {
+					// Log this...
+					contentObjs = append(contentObjs, v)
+				}
+			}
+			// Log this...
+			/*else {
+			    fmt.Printf("Content exists: %s\n", v.Url)
+			}*/
+		}
+	}
+
+	if len(contentObjs) == 0 {
+		fmt.Println("Unable to find new content.\nExiting...")
+		return
+	}
+	// Log this...
+	fmt.Printf("Was able to retrieve %v content objects.\n", len(contentObjs))
+	fmt.Println("Number of tries: ", tries)
 
 	compiledVid, err := content.Compile(contentObjs, "compiled-vid.mp4")
 	if err != nil {
@@ -134,6 +137,12 @@ func main() {
 	}
 
 	return
+}
+
+func checkFilters(c *content.Content, f config.Filters) bool {
+	//TODO: find a way to iterate through all filters
+	fmt.Printf("Content language: %s, Filter language: %s\n", c.Language, f.Language)
+	return c.Language == f.Language
 }
 
 // Consider this in the final version

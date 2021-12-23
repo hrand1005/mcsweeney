@@ -11,6 +11,7 @@ import (
 type Config struct {
 	Source      Source      `yaml:"source"`
 	Destination Destination `yaml:"destination"`
+	Filters     Filters     `yaml:"filters"`
 	Options     Options     `yaml:"options"`
 }
 
@@ -26,6 +27,11 @@ type Query struct {
 	GameID string `yaml:"gameID"`
 	First  int    `yaml:"first"`
 	Days   int    `yaml:"days"`
+}
+
+// Contains filters for source material
+type Filters struct {
+	Language string `yaml:"language"`
 }
 
 // Contains required fields to push content to platform
