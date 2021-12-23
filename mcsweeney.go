@@ -50,28 +50,46 @@ func main() {
 		fmt.Println("Couldn't create content-getter.")
 		log.Fatal(err)
 	}
+        
+    tries := 0
+    contentObjs := make([]*content.Content, 0, c.Source.Query.First)
+    for len(contentObjs) < c.Source.Query.First {
+        tries ++
+        fmt.Printf("Have: %v, Want: %v\nGetting more content.\n", len(contentObjs), c.Source.Query.First)
+        dirtyContent, err := getIntf.Get()
+        if err != nil {
+            fmt.Println("Couldn't get new content.")
+            log.Fatal(err)
+        }
+        if len(dirtyContent) == 0 {
+            fmt.Println("Content getter dry...")
+            break
+        }
 
-	dirtyContent, err := getIntf.Get()
-	if err != nil {
-		fmt.Println("Couldn't get new content.")
-		log.Fatal(err)
-	}
+        for _, v := range dirtyContent {
+            exists, err := dbIntf.Exists(v)
+            if err != nil {
+                fmt.Println("Couldn't check exists for dbIntf.")
+                log.Fatal(err)
+            }
+            if !exists && len(contentObjs) < c.Source.Query.First {
+                // Log this...
+                contentObjs = append(contentObjs, v)
+            } 
+            // Log this...
+            /*else {
+                fmt.Printf("Content exists: %s\n", v.Url)
+            }*/
+        }
+    }
 
-	contentObjs := make([]*content.Content, 0, len(dirtyContent))
-	for _, v := range dirtyContent {
-		exists, err := dbIntf.Exists(v)
-		if err != nil {
-			fmt.Println("Couldn't check exists for dbIntf.")
-			log.Fatal(err)
-		}
-		if !exists {
-			contentObjs = append(contentObjs, v)
-		}
-	}
-	if len(contentObjs) == 0 {
-		fmt.Println("No new content found.\nExiting...")
-		return
-	}
+    if len(contentObjs) == 0 {
+        fmt.Println("Unable to find new content.\nExiting...")
+        return
+    }
+    // Log this...
+    fmt.Printf("Was able to retrieve %v content objects.\n", len(contentObjs))
+    fmt.Println("Number of tries: ", tries)
 
 	compiledVid, err := content.Compile(contentObjs, "compiled-vid.mp4")
 	if err != nil {
