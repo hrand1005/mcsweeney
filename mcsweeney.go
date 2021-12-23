@@ -139,9 +139,16 @@ func main() {
 	return
 }
 
+// checkFilters checks whether the given content object passes all filters. If
+// yes, returns true, else false
 func checkFilters(c *content.Content, f config.Filters) bool {
 	//TODO: find a way to iterate through all filters
 	fmt.Printf("Content language: %s, Filter language: %s\n", c.Language, f.Language)
+	for _, v := range f.Blacklist {
+		if c.CreatorName == v {
+			return false
+		}
+	}
 	return c.Language == f.Language
 }
 

@@ -31,7 +31,8 @@ type Query struct {
 
 // Contains filters for source material
 type Filters struct {
-	Language string `yaml:"language"`
+	Language  string   `yaml:"language"`
+	Blacklist []string `yaml:"blacklist"`
 }
 
 // Contains required fields to push content to platform
