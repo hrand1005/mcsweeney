@@ -73,7 +73,7 @@ func main() {
 				log.Fatal(err)
 			}
 			if !exists && len(contentObjs) < c.Source.Query.First {
-				valid := checkFilters(v, c.Filters)
+				valid := Filter(v, c.Filters)
 				if valid {
 					// Log this...
 					contentObjs = append(contentObjs, v)
@@ -106,25 +106,27 @@ func main() {
 		log.Fatal(err)
 	}
 
-	shareIntf, err := content.NewSharer(c.Destination.Platform, c.Destination.Credentials)
-	if err != nil {
-		fmt.Println("Couldn't create content-sharer.")
-		log.Fatal(err)
-	}
+	/*
+		shareIntf, err := content.NewSharer(c.Destination.Platform, c.Destination.Credentials)
+		if err != nil {
+			fmt.Println("Couldn't create content-sharer.")
+			log.Fatal(err)
+		}
 
-	// set final Content object's fields with config args
-	compiledVid.Title = c.Destination.Title
-	compiledVid.Description = c.Destination.Description + compiledVid.Description // appends the default credits description
-	compiledVid.Keywords = c.Destination.Keywords
-	compiledVid.Privacy = c.Destination.Privacy
+		// set final Content object's fields with config args
+		compiledVid.Title = c.Destination.Title
+		compiledVid.Description = c.Destination.Description + compiledVid.Description // appends the default credits description
+		compiledVid.Keywords = c.Destination.Keywords
+		compiledVid.Privacy = c.Destination.Privacy
 
-	err = shareIntf.Share(compiledVid)
-	if err != nil {
-		fmt.Println("Couldn't share content.")
-		log.Fatal(err)
-	}
+		err = shareIntf.Share(compiledVid)
+		if err != nil {
+			fmt.Println("Couldn't share content.")
+			log.Fatal(err)
+		}
 
-	fmt.Println("Content shared successfully!")
+		fmt.Println("Content shared successfully!")
+	*/
 
 	// TODO: table / data for uploaded videos that can be updated at a later
 	// time with analytics
@@ -139,11 +141,10 @@ func main() {
 	return
 }
 
-// checkFilters checks whether the given content object passes all filters. If
+// Filter checks whether the given content object passes all filters. If
 // yes, returns true, else false
-func checkFilters(c *content.Content, f config.Filters) bool {
+func Filter(c *content.Content, f config.Filters) bool {
 	//TODO: find a way to iterate through all filters
-	fmt.Printf("Content language: %s, Filter language: %s\n", c.Language, f.Language)
 	for _, v := range f.Blacklist {
 		if c.CreatorName == v {
 			return false

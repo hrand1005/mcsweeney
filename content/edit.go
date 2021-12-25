@@ -9,14 +9,29 @@ import (
 )
 
 func (c *Content) ApplyOverlay(contentObjs []*Content, options config.Options) error {
+	bgFilter := generateOverlayBackground(contentObjs, options.Overlay)
 	filters := generateOverlayWithFadeArgs(contentObjs, options.Overlay)
-	args := []string{"-i", c.Path, "-vf", filters, "-codec:a", "copy", "finished-vid.mp4"}
-
-	ffmpegCmd := exec.Command("ffmpeg", args...)
-	err := ffmpegCmd.Run()
-	if err != nil {
-		return fmt.Errorf("Failed to execute ffmpeg cmd\n%s\nerr: %v\n", ffmpegCmd.String(), err)
+	bargs := make([]string, 0, len(contentObjs)*2+4)
+	bargs = append(bargs, "-i", c.Path)
+	for range contentObjs {
+		bargs = append(bargs, "-i", options.Overlay.Background)
 	}
+	bargs = append(bargs, "-filter_complex", bgFilter+","+filters, "finished-vid.mp4")
+	bgCmd := exec.Command("ffmpeg", bargs...)
+	err := bgCmd.Run()
+	if err != nil {
+		return fmt.Errorf("Failed to execute ffmpeg cmd\n%s\nerr: %v\n", bgCmd.String(), err)
+	}
+
+	//args := []string{"-i", "output.mp4", "-vf", filters, "-codec:a", "copy", "finished-vid.mp4"}
+
+	/*
+		ffmpegCmd := exec.Command("ffmpeg", args...)
+		err = ffmpegCmd.Run()
+		if err != nil {
+			return fmt.Errorf("Failed to execute ffmpeg cmd\n%s\nerr: %v\n", ffmpegCmd.String(), err)
+		}
+	*/
 
 	// update content path
 	c.Path = "finished-vid.mp4"
@@ -72,13 +87,15 @@ func Compile(contentObjs []*Content, outfile string) (*Content, error) {
 
 // TODO: Clean this up, new generate ffmpeg command library?
 const (
-	xPos = `x=10:`
-	yPos = `y=(h-text_h)-10`
+	//box = `box=1:boxcolor=black@0.5:boxborderw=5:`
+	xPos       = `x=20:`
+	yPos       = `y=800`
+	slideSpeed = float64(2000)
 )
 
 func generateOverlayWithFadeArgs(contentObjs []*Content, args config.Overlay) (allFilters string) {
-	fade := float64(args.Fade)
-	duration := float64(args.Duration)
+	fade := args.Fade
+	duration := args.Duration
 	font := fmt.Sprintf("drawtext=fontfile=%s:", args.Font)
 	fontColor := fmt.Sprintf("fontcolor=%s:", args.Color)
 	fontSize := fmt.Sprintf("fontsize=%s:", args.Size)
@@ -86,9 +103,10 @@ func generateOverlayWithFadeArgs(contentObjs []*Content, args config.Overlay) (a
 	var cursor float64
 	for i, v := range contentObjs {
 		// TODO: find workaround, escaping with `\'` doesn't work
-		title := strings.ReplaceAll(v.Title, `'`, ``)
+		title := strings.ReplaceAll(v.Title, `'`, `\\\'`)
+        title = strings.ReplaceAll(title, `,`, `\\\,`)
 		creator := strings.ReplaceAll(v.CreatorName, `'`, ``)
-		overlayText := fmt.Sprintf("text='%s\n%s':", title, creator)
+		overlayText := fmt.Sprintf("text=%s\n%s:", title, creator)
 		fmt.Printf("\nAppling overlay text:\n%s\n", overlayText)
 		alpha := fmt.Sprintf(`alpha='if(lt(t,%f),0,if(lt(t,%f),(t-%f)/1,if(lt(t,%f),1,if(lt(t,%f),(1-(t-%f))/1,0))))':`, cursor+1.0, cursor+1.0+fade, cursor+1.0, cursor+duration, cursor+duration+fade, cursor+duration)
 		fullOverlay := font + overlayText + fontSize + fontColor + alpha + xPos + yPos
@@ -101,6 +119,25 @@ func generateOverlayWithFadeArgs(contentObjs []*Content, args config.Overlay) (a
 	}
 
 	return allFilters
+}
+
+func generateOverlayBackground(contentObjs []*Content, args config.Overlay) (bgFilter string) {
+	slide := args.Fade
+	duration := args.Duration + 1.0
+	ypos := `y=780`
+
+	var cursor float64
+	for i, v := range contentObjs {
+		bgFilter += fmt.Sprintf(`overlay=x='if(lt(t,%f),NAN,if(lt(t,%f),-w+(t-%f)*%f,if(lt(t,%f),-w+%f,-w+%f-(t-%f)*%f)))':%s`, cursor, cursor+slide, cursor, slideSpeed, cursor+slide+duration, slide*slideSpeed, slide*slideSpeed, cursor+slide+duration, slideSpeed, ypos)
+		if i < len(contentObjs)-1 {
+			bgFilter += ","
+		}
+
+		cursor += v.Duration
+	}
+	fmt.Println("Bg filter: ", bgFilter)
+
+	return bgFilter
 }
 
 func buildCredits(contentObjs []*Content) (credits string) {
