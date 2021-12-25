@@ -102,13 +102,11 @@ func generateOverlayWithFadeArgs(contentObjs []*Content, args config.Overlay) (a
 
 	var cursor float64
 	for i, v := range contentObjs {
-		// TODO: find workaround, escaping with `\'` doesn't work
-		title := strings.ReplaceAll(v.Title, `'`, `\\\'`)
-        title = strings.ReplaceAll(title, `,`, `\\\,`)
-		creator := strings.ReplaceAll(v.CreatorName, `'`, ``)
+		title := formatOverlayString(v.Title)
+		creator := formatOverlayString(v.CreatorName)
 		overlayText := fmt.Sprintf("text=%s\n%s:", title, creator)
 		fmt.Printf("\nAppling overlay text:\n%s\n", overlayText)
-		alpha := fmt.Sprintf(`alpha='if(lt(t,%f),0,if(lt(t,%f),(t-%f)/1,if(lt(t,%f),1,if(lt(t,%f),(1-(t-%f))/1,0))))':`, cursor+1.0, cursor+1.0+fade, cursor+1.0, cursor+duration, cursor+duration+fade, cursor+duration)
+		alpha := fmt.Sprintf(`alpha='if(lt(t,%f),0,if(lt(t,%f),(t-%f)/1,if(lt(t,%f),1,if(lt(t,%f),(1-(t-%f))/1,0))))':`, cursor+0.5, cursor+0.5+fade, cursor+0.5, cursor+duration, cursor+duration+fade, cursor+duration)
 		fullOverlay := font + overlayText + fontSize + fontColor + alpha + xPos + yPos
 		allFilters += fullOverlay
 		if i < len(contentObjs)-1 {
@@ -122,12 +120,15 @@ func generateOverlayWithFadeArgs(contentObjs []*Content, args config.Overlay) (a
 }
 
 func generateOverlayBackground(contentObjs []*Content, args config.Overlay) (bgFilter string) {
-	slide := args.Fade
-	duration := args.Duration + 1.0
+	duration := args.Duration + 0.5
 	ypos := `y=780`
 
 	var cursor float64
 	for i, v := range contentObjs {
+		// calculates a rough estimate for bg length based on content title
+		var bgLength float64 = float64(len(v.Title) * 19)
+		var slide float64 = bgLength / slideSpeed
+		//TODO: implement max distance, generate distance from length of title
 		bgFilter += fmt.Sprintf(`overlay=x='if(lt(t,%f),NAN,if(lt(t,%f),-w+(t-%f)*%f,if(lt(t,%f),-w+%f,-w+%f-(t-%f)*%f)))':%s`, cursor, cursor+slide, cursor, slideSpeed, cursor+slide+duration, slide*slideSpeed, slide*slideSpeed, cursor+slide+duration, slideSpeed, ypos)
 		if i < len(contentObjs)-1 {
 			bgFilter += ","
@@ -157,4 +158,9 @@ func buildCredits(contentObjs []*Content) (credits string) {
 	}
 
 	return
+}
+
+func formatOverlayString(raw string) string {
+	formatted := strings.ReplaceAll(raw, `'`, `\\\'`)
+	return strings.ReplaceAll(formatted, `,`, `\\\,`)
 }

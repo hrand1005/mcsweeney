@@ -53,12 +53,12 @@ type Options struct {
 
 // Contains configurable overlay fields
 type Overlay struct {
-	Font       string `yaml:"font"`
-	Size       string `yaml:"size"`
-	Color      string `yaml:"color"`
-	Duration   float64    `yaml:"duration"`
-	Fade       float64    `yaml:"fade"`
-	Background string `yaml:"background"`
+	Font       string  `yaml:"font"`
+	Size       string  `yaml:"size"`
+	Color      string  `yaml:"color"`
+	Duration   float64 `yaml:"duration"`
+	Fade       float64 `yaml:"fade"`
+	Background string  `yaml:"background"`
 }
 
 // Loads config from given yaml file, returns Config pointer
