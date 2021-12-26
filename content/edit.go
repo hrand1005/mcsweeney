@@ -10,14 +10,17 @@ import (
 )
 
 func (c *Content) ApplyOverlay(contentObjs []*Content, options config.Options) error {
-	bgFilter := generateOverlayBackground(contentObjs, options.Overlay)
-	filters := generateOverlayWithFadeArgs(contentObjs, options.Overlay)
+	// generate strings for overlay background and overlay text filters
+	bgFilters := generateOverlayBackground(contentObjs, options.Overlay)
+	tFilters := generateOverlayWithFadeArgs(contentObjs, options.Overlay)
+
+	// create ffmpeg command, using complex filter args for overlay and text
 	bargs := make([]string, 0, len(contentObjs)*2+4)
 	bargs = append(bargs, "-i", c.Path)
 	for range contentObjs {
 		bargs = append(bargs, "-i", options.Overlay.Background)
 	}
-	bargs = append(bargs, "-filter_complex", bgFilter+","+filters, "finished-vid.mp4")
+	bargs = append(bargs, "-filter_complex", bgFilters+","+tFilters, "finished-vid.mp4")
 	bgCmd := exec.Command("ffmpeg", bargs...)
 	err := bgCmd.Run()
 	if err != nil {
@@ -34,7 +37,7 @@ func (c *Content) ApplyOverlay(contentObjs []*Content, options config.Options) e
 // Compile takes a slice of Content objects, encodes them consistently and then
 // concatenates them to create a new content object. As part of this, it credits
 // it's subobjects in the description.
-func Compile(contentObjs []*Content, outfile string) (*Content, error) {
+func Concatenate(contentObjs []*Content, outfile string) (*Content, error) {
 	f, err := os.Create("compile.txt")
 	if err != nil {
 		return nil, err
@@ -62,7 +65,7 @@ func Compile(contentObjs []*Content, outfile string) (*Content, error) {
 		}
 	}
 
-	fmt.Println("Compiling content...")
+	fmt.Println("Concatenating content...")
 	args := []string{"-f", "concat", "-safe", "0", "-i", "compile.txt", outfile}
 	cmd := exec.Command("ffmpeg", args...)
 	err = cmd.Run()
@@ -79,8 +82,8 @@ func Compile(contentObjs []*Content, outfile string) (*Content, error) {
 // TODO: Clean this up, new generate ffmpeg command library?
 const (
 	//box = `box=1:boxcolor=black@0.5:boxborderw=5:`
-	xPos       = `x=20:`
-	yPos       = `y=800`
+	xPos       = 20
+	yPos       = 800
 	slideSpeed = float64(2000)
 )
 
@@ -90,6 +93,8 @@ func generateOverlayWithFadeArgs(contentObjs []*Content, args config.Overlay) (a
 	font := fmt.Sprintf("drawtext=fontfile=%s:", args.Font)
 	fontColor := fmt.Sprintf("fontcolor=%s:", args.Color)
 	fontSize := fmt.Sprintf("fontsize=%s:", args.Size)
+	xPosition := fmt.Sprintf(`x=%v:`, xPos)
+	yPosition := fmt.Sprintf(`y=%v`, yPos)
 
 	var cursor float64
 	for i, v := range contentObjs {
@@ -98,7 +103,7 @@ func generateOverlayWithFadeArgs(contentObjs []*Content, args config.Overlay) (a
 		overlayText := fmt.Sprintf("text=%s\n%s:", title, creator)
 		fmt.Printf("\nAppling overlay text:\n%s\n", overlayText)
 		alpha := fmt.Sprintf(`alpha='if(lt(t,%f),0,if(lt(t,%f),(t-%f)/1,if(lt(t,%f),1,if(lt(t,%f),(1-(t-%f))/1,0))))':`, cursor+0.5, cursor+0.5+fade, cursor+0.5, cursor+duration, cursor+duration+fade, cursor+duration)
-		fullOverlay := font + overlayText + fontSize + fontColor + alpha + xPos + yPos
+		fullOverlay := font + overlayText + fontSize + fontColor + alpha + xPosition + yPosition
 		allFilters += fullOverlay
 		if i < len(contentObjs)-1 {
 			allFilters += ","
@@ -112,17 +117,16 @@ func generateOverlayWithFadeArgs(contentObjs []*Content, args config.Overlay) (a
 
 func generateOverlayBackground(contentObjs []*Content, args config.Overlay) (bgFilter string) {
 	duration := args.Duration + 0.5
-	ypos := `y=780`
+	yPosition := fmt.Sprintf(`y=%v`, yPos-20)
 
 	var cursor float64
 	for i, v := range contentObjs {
 		// calculates a rough estimate for bg length based on content title
 		tLength := float64(len(v.Title) * 19)
 		cLength := float64(len(v.CreatorName) * 19)
-		var bgLength float64 = math.Max(tLength, cLength)
-		var slide float64 = bgLength / slideSpeed
-		//TODO: implement max distance, generate distance from length of title
-		bgFilter += fmt.Sprintf(`overlay=x='if(lt(t,%f),NAN,if(lt(t,%f),-w+(t-%f)*%f,if(lt(t,%f),-w+%f,-w+%f-(t-%f)*%f)))':%s`, cursor, cursor+slide, cursor, slideSpeed, cursor+slide+duration, slide*slideSpeed, slide*slideSpeed, cursor+slide+duration, slideSpeed, ypos)
+		bgLength := math.Max(tLength, cLength)
+		slide := bgLength / slideSpeed
+		bgFilter += fmt.Sprintf(`overlay=x='if(lt(t,%f),NAN,if(lt(t,%f),-w+(t-%f)*%f,if(lt(t,%f),-w+%f,-w+%f-(t-%f)*%f)))':%s`, cursor, cursor+slide, cursor, slideSpeed, cursor+slide+duration, slide*slideSpeed, slide*slideSpeed, cursor+slide+duration, slideSpeed, yPosition)
 		if i < len(contentObjs)-1 {
 			bgFilter += ","
 		}

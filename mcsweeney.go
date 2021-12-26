@@ -94,7 +94,7 @@ func main() {
 	fmt.Printf("Was able to retrieve %v content objects.\n", len(contentObjs))
 	fmt.Println("Number of tries: ", tries)
 
-	compiledVid, err := content.Compile(contentObjs, "compiled-vid.mp4")
+	compiledVid, err := content.Concatenate(contentObjs, "compiled-vid.mp4")
 	if err != nil {
 		fmt.Println("Couldn't compile content.")
 		log.Fatal(err)
