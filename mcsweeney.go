@@ -25,11 +25,6 @@ import (
 	"os"
 )
 
-const (
-	RawVidsDir       = "tmp/raw"
-	ProcessedVidsDir = "tmp/processed"
-)
-
 func main() {
 	// TODO: add command line parsing
 	c, err := config.LoadConfig(os.Args[1])

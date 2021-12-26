@@ -33,8 +33,8 @@ func (c *Content) ApplyOverlay(contentObjs []*Content, options config.Options) e
 	return nil
 }
 
-// TODO: decouple encoding from compiling step
-// Compile takes a slice of Content objects, encodes them consistently and then
+// TODO: decouple encoding from concatenation step
+// Concatenate takes a slice of Content objects, encodes them consistently and then
 // concatenates them to create a new content object. As part of this, it credits
 // it's subobjects in the description.
 func Concatenate(contentObjs []*Content, outfile string) (*Content, error) {
@@ -45,17 +45,15 @@ func Concatenate(contentObjs []*Content, outfile string) (*Content, error) {
 	defer f.Close()
 
 	for _, v := range contentObjs {
-		filename := strings.SplitN(v.Url, "twitch.tv", 2)[1]
-		basename := filename[:len(filename)-4]
-		processedPath := "tmp/processed/" + basename + ".mkv"
-		cmd := exec.Command("ffmpeg", "-i", v.Url, "-c:v", "libx264", "-preset", "slow", "-crf", "22", "-c:a", "copy", processedPath)
-		fmt.Println("Encoding content to ", processedPath)
+		//filename := strings.ReplaceAll(v.Url, ".", "")
+		path := "tmp/" + strings.ReplaceAll(v.Url, "/", "") + ".mkv"
+		cmd := exec.Command("ffmpeg", "-i", v.Url, "-c:v", "libx264", "-preset", "slow", "-crf", "22", "-c:a", "copy", path)
+		fmt.Println("Encoding content to ", path)
 		err := cmd.Run()
 		if err != nil {
 			return nil, fmt.Errorf("Failed to download and encode to path %s: %v\n", v.Path, err)
 		}
-
-		v.Path = processedPath
+		v.Path = path
 
 		// write to txt file
 		w := fmt.Sprintf("file '%s'\n", v.Path)
@@ -81,7 +79,6 @@ func Concatenate(contentObjs []*Content, outfile string) (*Content, error) {
 
 // TODO: Clean this up, new generate ffmpeg command library?
 const (
-	//box = `box=1:boxcolor=black@0.5:boxborderw=5:`
 	xPos       = 20
 	yPos       = 800
 	slideSpeed = float64(2000)
