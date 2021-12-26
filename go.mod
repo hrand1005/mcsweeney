@@ -9,7 +9,6 @@ require (
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	google.golang.org/api v0.30.0
 	gopkg.in/yaml.v2 v2.4.0
-	gotest.tools v2.2.0+incompatible
 )
 
 require (
@@ -17,9 +16,7 @@ require (
 	github.com/golang-jwt/jwt v3.2.1+incompatible // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.4.2 // indirect
-	github.com/google/go-cmp v0.5.1 // indirect
 	github.com/googleapis/gax-go/v2 v2.0.5 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	go.opencensus.io v0.22.4 // indirect
 	golang.org/x/sys v0.0.0-20210510120138-977fb7262007 // indirect
 	golang.org/x/text v0.3.6 // indirect

@@ -2,6 +2,7 @@ package content
 
 import (
 	"fmt"
+	"math"
 	"mcsweeney/config"
 	"os"
 	"os/exec"
@@ -22,16 +23,6 @@ func (c *Content) ApplyOverlay(contentObjs []*Content, options config.Options) e
 	if err != nil {
 		return fmt.Errorf("Failed to execute ffmpeg cmd\n%s\nerr: %v\n", bgCmd.String(), err)
 	}
-
-	//args := []string{"-i", "output.mp4", "-vf", filters, "-codec:a", "copy", "finished-vid.mp4"}
-
-	/*
-		ffmpegCmd := exec.Command("ffmpeg", args...)
-		err = ffmpegCmd.Run()
-		if err != nil {
-			return fmt.Errorf("Failed to execute ffmpeg cmd\n%s\nerr: %v\n", ffmpegCmd.String(), err)
-		}
-	*/
 
 	// update content path
 	c.Path = "finished-vid.mp4"
@@ -126,7 +117,9 @@ func generateOverlayBackground(contentObjs []*Content, args config.Overlay) (bgF
 	var cursor float64
 	for i, v := range contentObjs {
 		// calculates a rough estimate for bg length based on content title
-		var bgLength float64 = float64(len(v.Title) * 19)
+		tLength := float64(len(v.Title) * 19)
+		cLength := float64(len(v.CreatorName) * 19)
+		var bgLength float64 = math.Max(tLength, cLength)
 		var slide float64 = bgLength / slideSpeed
 		//TODO: implement max distance, generate distance from length of title
 		bgFilter += fmt.Sprintf(`overlay=x='if(lt(t,%f),NAN,if(lt(t,%f),-w+(t-%f)*%f,if(lt(t,%f),-w+%f,-w+%f-(t-%f)*%f)))':%s`, cursor, cursor+slide, cursor, slideSpeed, cursor+slide+duration, slide*slideSpeed, slide*slideSpeed, cursor+slide+duration, slideSpeed, ypos)
@@ -136,7 +129,6 @@ func generateOverlayBackground(contentObjs []*Content, args config.Overlay) (bgF
 
 		cursor += v.Duration
 	}
-	fmt.Println("Bg filter: ", bgFilter)
 
 	return bgFilter
 }
