@@ -15,9 +15,13 @@ func (c *Content) ApplyOverlay(contentObjs []*Content, options config.Options) e
 	tFilters := generateOverlayWithFadeArgs(contentObjs, options.Overlay)
 
 	// create ffmpeg command, using complex filter args for overlay and text
-	bargs := make([]string, 0, len(contentObjs)*2+4)
+	var overlayCount int = len(contentObjs)
+	if contentObjs[0].Title == "Intro" {
+		overlayCount -= 1
+	}
+	bargs := make([]string, 0, overlayCount*2+4)
 	bargs = append(bargs, "-i", c.Path)
-	for range contentObjs {
+	for i := 0; i < overlayCount; i++ {
 		bargs = append(bargs, "-i", options.Overlay.Background)
 	}
 	bargs = append(bargs, "-filter_complex", bgFilters+","+tFilters, "finished-vid.mp4")
@@ -79,8 +83,9 @@ func Concatenate(contentObjs []*Content, outfile string) (*Content, error) {
 
 // TODO: Clean this up, new generate ffmpeg command library?
 const (
+	// TODO: make x and y relative to video format
 	xPos       = 20
-	yPos       = 800
+	yPos       = 500
 	slideSpeed = float64(2000)
 )
 
@@ -95,15 +100,17 @@ func generateOverlayWithFadeArgs(contentObjs []*Content, args config.Overlay) (a
 
 	var cursor float64
 	for i, v := range contentObjs {
-		title := formatOverlayString(v.Title)
-		creator := formatOverlayString(v.CreatorName)
-		overlayText := fmt.Sprintf("text=%s\n%s:", title, creator)
-		fmt.Printf("\nAppling overlay text:\n%s\n", overlayText)
-		alpha := fmt.Sprintf(`alpha='if(lt(t,%f),0,if(lt(t,%f),(t-%f)/1,if(lt(t,%f),1,if(lt(t,%f),(1-(t-%f))/1,0))))':`, cursor+0.5, cursor+0.5+fade, cursor+0.5, cursor+duration, cursor+duration+fade, cursor+duration)
-		fullOverlay := font + overlayText + fontSize + fontColor + alpha + xPosition + yPosition
-		allFilters += fullOverlay
-		if i < len(contentObjs)-1 {
-			allFilters += ","
+		if v.Title != "Intro" {
+			title := formatOverlayString(v.Title)
+			creator := formatOverlayString(v.CreatorName)
+			overlayText := fmt.Sprintf("text=%s\n%s:", title, creator)
+			fmt.Printf("\nAppling overlay text:\n%s\n", overlayText)
+			alpha := fmt.Sprintf(`alpha='if(lt(t,%f),0,if(lt(t,%f),(t-%f)/1,if(lt(t,%f),1,if(lt(t,%f),(1-(t-%f))/1,0))))':`, cursor+0.5, cursor+0.5+fade, cursor+0.5, cursor+duration, cursor+duration+fade, cursor+duration)
+			fullOverlay := font + overlayText + fontSize + fontColor + alpha + xPosition + yPosition
+			allFilters += fullOverlay
+			if i < len(contentObjs)-1 {
+				allFilters += ","
+			}
 		}
 
 		cursor += v.Duration
@@ -118,14 +125,17 @@ func generateOverlayBackground(contentObjs []*Content, args config.Overlay) (bgF
 
 	var cursor float64
 	for i, v := range contentObjs {
-		// calculates a rough estimate for bg length based on content title
-		tLength := float64(len(v.Title) * 19)
-		cLength := float64(len(v.CreatorName) * 19)
-		bgLength := math.Max(tLength, cLength)
-		slide := bgLength / slideSpeed
-		bgFilter += fmt.Sprintf(`overlay=x='if(lt(t,%f),NAN,if(lt(t,%f),-w+(t-%f)*%f,if(lt(t,%f),-w+%f,-w+%f-(t-%f)*%f)))':%s`, cursor, cursor+slide, cursor, slideSpeed, cursor+slide+duration, slide*slideSpeed, slide*slideSpeed, cursor+slide+duration, slideSpeed, yPosition)
-		if i < len(contentObjs)-1 {
-			bgFilter += ","
+		if v.Title != "Intro" {
+			// calculates a rough estimate for bg length based on content title
+			// base on font size?
+			tLength := float64(len(v.Title) * 14)
+			cLength := float64(len(v.CreatorName) * 14)
+			bgLength := math.Max(tLength, cLength)
+			slide := bgLength / slideSpeed
+			bgFilter += fmt.Sprintf(`overlay=x='if(lt(t,%f),NAN,if(lt(t,%f),-w+(t-%f)*%f,if(lt(t,%f),-w+%f,-w+%f-(t-%f)*%f)))':%s`, cursor, cursor+slide, cursor, slideSpeed, cursor+slide+duration, slide*slideSpeed, slide*slideSpeed, cursor+slide+duration, slideSpeed, yPosition)
+			if i < len(contentObjs)-1 {
+				bgFilter += ","
+			}
 		}
 
 		cursor += v.Duration
@@ -155,5 +165,6 @@ func buildCredits(contentObjs []*Content) (credits string) {
 
 func formatOverlayString(raw string) string {
 	formatted := strings.ReplaceAll(raw, `'`, `\\\'`)
+	formatted = strings.ReplaceAll(formatted, `:`, `\\\:`)
 	return strings.ReplaceAll(formatted, `,`, `\\\,`)
 }

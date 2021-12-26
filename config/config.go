@@ -9,10 +9,17 @@ import (
 // TODO: More descriptive name
 // Contains the full configuration of a content strategy
 type Config struct {
+	Intro       Intro       `yaml:"intro"`
 	Source      Source      `yaml:"source"`
 	Destination Destination `yaml:"destination"`
 	Filters     Filters     `yaml:"filters"`
 	Options     Options     `yaml:"options"`
+}
+
+// Contains intro information for prepended content
+type Intro struct {
+	Path     string  `yaml:"path"`
+	Duration float64 `yaml:"duration"`
 }
 
 // Contains required fields to pull raw content from platform
