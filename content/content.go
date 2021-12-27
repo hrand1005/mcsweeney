@@ -4,6 +4,14 @@ import (
 	"fmt"
 )
 
+type ContentType string
+
+const (
+	CUSTOM  ContentType = "custom"
+	TWITCH  ContentType = "twitch"
+	YOUTUBE ContentType = "youtube"
+)
+
 // TODO: Composite pattern for Content objects? --> allows us to defer
 // compilation and editing to convenient steps, better encapsulates Content
 // metadata (credits, timestamps, overlays, etc.), also enables consistent
@@ -17,8 +25,9 @@ type Content struct {
 	Keywords    string
 	Language    string
 	Path        string
-	Privacy     string
+	Privacy     Privacy
 	Title       string
+	Type        ContentType
 	Url         string
 }
 
@@ -36,12 +45,7 @@ type Sharer interface {
 	Share(*Content) error
 }
 
-const (
-	TWITCH  = "twitch"
-	YOUTUBE = "youtube"
-)
-
-func NewGetter(platform string, credentials string, query Query) (Getter, error) {
+func NewGetter(platform ContentType, credentials string, query Query) (Getter, error) {
 	switch platform {
 	case TWITCH:
 		return NewTwitchGetter(credentials, query)
@@ -50,7 +54,7 @@ func NewGetter(platform string, credentials string, query Query) (Getter, error)
 	}
 }
 
-func NewSharer(platform string, credentials string) (Sharer, error) {
+func NewSharer(platform ContentType, credentials string) (Sharer, error) {
 	switch platform {
 	case YOUTUBE:
 		return NewYoutubeSharer(credentials)

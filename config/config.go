@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"mcsweeney/content"
 )
 
 // TODO: More descriptive name
@@ -24,9 +25,9 @@ type Intro struct {
 
 // Contains required fields to pull raw content from platform
 type Source struct {
-	Platform    string `yaml:"platform"`
-	Credentials string `yaml:"credentials"`
-	Query       Query  `yaml:"query"`
+	Platform    content.ContentType `yaml:"platform"`
+	Credentials string              `yaml:"credentials"`
+	Query       Query               `yaml:"query"`
 }
 
 // Contains query arguments to be used to gather content
@@ -44,28 +45,18 @@ type Filters struct {
 
 // Contains required fields to push content to platform
 type Destination struct {
-	Platform    string `yaml:"platform"`
-	Credentials string `yaml:"credentials"`
-	Title       string `yaml:"title"`
-	Description string `yaml:"description"`
-	Category    string `yaml:"category"`
-	Keywords    string `yaml:"keywords"`
-	Privacy     string `yaml:"privacy"`
+	Platform    content.ContentType `yaml:"platform"`
+	Credentials string              `yaml:"credentials"`
+	Title       string              `yaml:"title"`
+	Description string              `yaml:"description"`
+	Category    string              `yaml:"category"`
+	Keywords    string              `yaml:"keywords"`
+	Privacy     content.Privacy     `yaml:"privacy"`
 }
 
 // Contains options for content editing
 type Options struct {
-	Overlay Overlay `yaml:"overlay"`
-}
-
-// Contains configurable overlay fields
-type Overlay struct {
-	Font       string  `yaml:"font"`
-	Size       string  `yaml:"size"`
-	Color      string  `yaml:"color"`
-	Duration   float64 `yaml:"duration"`
-	Fade       float64 `yaml:"fade"`
-	Background string  `yaml:"background"`
+	Overlay content.Overlay `yaml:"overlay"`
 }
 
 // Loads config from given yaml file, returns Config pointer

@@ -3,7 +3,6 @@ package content
 import (
 	"fmt"
 	"math"
-	"mcsweeney/config"
 	"os"
 	"os/exec"
 	"strings"
@@ -11,10 +10,19 @@ import (
 	"time"
 )
 
-func (c *Content) ApplyOverlay(contentObjs []*Content, options config.Options) error {
+type Overlay struct {
+	Font       string  `yaml:"font"`
+	Size       string  `yaml:"size"`
+	Color      string  `yaml:"color"`
+	Duration   float64 `yaml:"duration"`
+	Fade       float64 `yaml:"fade"`
+	Background string  `yaml:"background"`
+}
+
+func (c *Content) ApplyOverlay(contentObjs []*Content, overlay Overlay) error {
 	// generate strings for overlay background and overlay text filters
-	bgFilters := generateOverlayBackground(contentObjs, options.Overlay)
-	tFilters := generateOverlayWithFadeArgs(contentObjs, options.Overlay)
+	bgFilters := generateOverlayBackground(contentObjs, overlay)
+	tFilters := generateOverlayWithFadeArgs(contentObjs, overlay)
 
 	// create ffmpeg command, using complex filter args for overlay and text
 	var overlayCount int = len(contentObjs)
@@ -25,7 +33,7 @@ func (c *Content) ApplyOverlay(contentObjs []*Content, options config.Options) e
 	bargs := make([]string, 0, overlayCount*2+4)
 	bargs = append(bargs, "-i", c.Path)
 	for i := 0; i < overlayCount; i++ {
-		bargs = append(bargs, "-i", options.Overlay.Background)
+		bargs = append(bargs, "-i", overlay.Background)
 	}
 	bargs = append(bargs, "-filter_complex", bgFilters+","+tFilters, "finished-vid.mp4")
 	bgCmd := exec.Command("ffmpeg", bargs...)
@@ -82,8 +90,7 @@ func Concatenate(contentObjs []*Content, outfile string) (*Content, error) {
 			return nil, err
 		}
 	}
-
-	fmt.Printf("Time to concatenate: %v", time.Since(start))
+	fmt.Printf("Time to concatenate: %v\n", time.Since(start))
 
 	fmt.Println("Concatenating content...")
 	args := []string{"-f", "concat", "-safe", "0", "-i", "compile.txt", outfile}
@@ -107,7 +114,7 @@ const (
 	slideSpeed = float64(2000)
 )
 
-func generateOverlayWithFadeArgs(contentObjs []*Content, args config.Overlay) (allFilters string) {
+func generateOverlayWithFadeArgs(contentObjs []*Content, args Overlay) (allFilters string) {
 	fade := args.Fade
 	duration := args.Duration
 	font := fmt.Sprintf("drawtext=fontfile=%s:", args.Font)
@@ -118,7 +125,7 @@ func generateOverlayWithFadeArgs(contentObjs []*Content, args config.Overlay) (a
 
 	var cursor float64
 	for i, v := range contentObjs {
-		if v.Title != "Intro" {
+		if v.Type == TWITCH {
 			title := formatOverlayString(v.Title)
 			creator := formatOverlayString(v.CreatorName)
 			overlayText := fmt.Sprintf("text=%s\n%s:", title, creator)
@@ -137,17 +144,17 @@ func generateOverlayWithFadeArgs(contentObjs []*Content, args config.Overlay) (a
 	return allFilters
 }
 
-func generateOverlayBackground(contentObjs []*Content, args config.Overlay) (bgFilter string) {
+func generateOverlayBackground(contentObjs []*Content, args Overlay) (bgFilter string) {
 	duration := args.Duration + 0.5
 	yPosition := fmt.Sprintf(`y=%v`, yPos-20)
 
 	var cursor float64
 	for i, v := range contentObjs {
-		if v.Title != "Intro" {
+		if v.Type == TWITCH {
 			// calculates a rough estimate for bg length based on content title
 			// base on font size?
-			tLength := float64(len(v.Title) * 14)
-			cLength := float64(len(v.CreatorName) * 14)
+			tLength := float64(len(v.Title) * 22)
+			cLength := float64(len(v.CreatorName) * 22)
 			bgLength := math.Max(tLength, cLength)
 			slide := bgLength / slideSpeed
 			bgFilter += fmt.Sprintf(`overlay=x='if(lt(t,%f),NAN,if(lt(t,%f),-w+(t-%f)*%f,if(lt(t,%f),-w+%f,-w+%f-(t-%f)*%f)))':%s`, cursor, cursor+slide, cursor, slideSpeed, cursor+slide+duration, slide*slideSpeed, slide*slideSpeed, cursor+slide+duration, slideSpeed, yPosition)

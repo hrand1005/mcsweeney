@@ -8,6 +8,13 @@ import (
 	"strings"
 )
 
+type Privacy string
+
+const (
+	PRIVATE Privacy = "private"
+	PUBLIC  Privacy = "public"
+)
+
 type YoutubeSharer struct {
 	client *http.Client
 }
@@ -37,7 +44,7 @@ func (y *YoutubeSharer) Share(v *Content) error {
 			//CategoryId:  v.CategoryID,
 			Tags: strings.Split(v.Keywords, ","),
 		},
-		Status: &youtube.VideoStatus{PrivacyStatus: v.Privacy},
+		Status: &youtube.VideoStatus{PrivacyStatus: string(v.Privacy)},
 	}
 
 	insertArgs := []string{"snippet", "status"}
