@@ -80,6 +80,7 @@ func convertClipToContentObj(clip *helix.Clip) (c *Content) {
 	c.Duration = clip.Duration
 	c.Language = clip.Language
 	c.Title = clip.Title
+	c.Type = TWITCH
 	c.Url = strings.SplitN(clip.ThumbnailURL, "-preview", 2)[0] + ".mp4"
 
 	return
