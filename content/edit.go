@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
+	"time"
 )
 
 func (c *Content) ApplyOverlay(contentObjs []*Content, options config.Options) error {
@@ -16,6 +18,7 @@ func (c *Content) ApplyOverlay(contentObjs []*Content, options config.Options) e
 
 	// create ffmpeg command, using complex filter args for overlay and text
 	var overlayCount int = len(contentObjs)
+	// TODO: fix this
 	if contentObjs[0].Title == "Intro" {
 		overlayCount -= 1
 	}
@@ -42,30 +45,45 @@ func (c *Content) ApplyOverlay(contentObjs []*Content, options config.Options) e
 // concatenates them to create a new content object. As part of this, it credits
 // it's subobjects in the description.
 func Concatenate(contentObjs []*Content, outfile string) (*Content, error) {
+	start := time.Now()
 	f, err := os.Create("compile.txt")
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
 
-	for _, v := range contentObjs {
+	var wg sync.WaitGroup
+	encodeFunc := func(v *Content) {
+		defer wg.Done()
 		//filename := strings.ReplaceAll(v.Url, ".", "")
 		path := "tmp/" + strings.ReplaceAll(v.Url, "/", "") + ".mkv"
 		cmd := exec.Command("ffmpeg", "-i", v.Url, "-c:v", "libx264", "-preset", "slow", "-crf", "22", "-c:a", "copy", path)
 		fmt.Println("Encoding content to ", path)
-		err := cmd.Run()
-		if err != nil {
-			return nil, fmt.Errorf("Failed to download and encode to path %s: %v\n", v.Path, err)
-		}
+		/*err := */ cmd.Run()
+		/*
+		   if err != nil {
+		       return nil, fmt.Errorf("Failed to download and encode to path %s: %v\n", v.Path, err)
+		   }*/
 		v.Path = path
+	}
 
-		// write to txt file
+	for _, v := range contentObjs {
+		wg.Add(1)
+		go encodeFunc(v)
+	}
+
+	wg.Wait()
+
+	// write path names to file
+	for _, v := range contentObjs {
 		w := fmt.Sprintf("file '%s'\n", v.Path)
 		_, err = f.WriteString(w)
 		if err != nil {
 			return nil, err
 		}
 	}
+
+	fmt.Printf("Time to concatenate: %v", time.Since(start))
 
 	fmt.Println("Concatenating content...")
 	args := []string{"-f", "concat", "-safe", "0", "-i", "compile.txt", outfile}
