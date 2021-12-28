@@ -155,7 +155,7 @@ func generateOverlayBackground(contentObjs []*Content, args Overlay) (bgFilter s
 			// base on font size?
 			tLength := float64(len(v.Title) * 16)
 			cLength := float64(len(v.CreatorName) * 16)
-			bgLength := math.Max(tLength, cLength) + 3.5*xPos 
+			bgLength := math.Max(tLength, cLength) + 3.5*xPos
 			slide := bgLength / slideSpeed
 			bgFilter += fmt.Sprintf(`overlay=x='if(lt(t,%f),NAN,if(lt(t,%f),-w+(t-%f)*%f,if(lt(t,%f),-w+%f,-w+%f-(t-%f)*%f)))':%s`, cursor, cursor+slide, cursor, slideSpeed, cursor+slide+duration, slide*slideSpeed, slide*slideSpeed, cursor+slide+duration, slideSpeed, yPosition)
 			if i < len(contentObjs)-1 {
