@@ -90,7 +90,7 @@ func Concatenate(contentObjs []*Content, outfile string) (*Content, error) {
 			return nil, err
 		}
 	}
-	fmt.Printf("Time to concatenate: %v\n", time.Since(start))
+	fmt.Printf("Time to encode: %v\n", time.Since(start))
 
 	fmt.Println("Concatenating content...")
 	args := []string{"-f", "concat", "-safe", "0", "-i", "compile.txt", outfile}
@@ -146,16 +146,16 @@ func generateOverlayWithFadeArgs(contentObjs []*Content, args Overlay) (allFilte
 
 func generateOverlayBackground(contentObjs []*Content, args Overlay) (bgFilter string) {
 	duration := args.Duration + 0.5
-	yPosition := fmt.Sprintf(`y=%v`, yPos-20)
+	yPosition := fmt.Sprintf(`y=%v`, yPos-30)
 
 	var cursor float64
 	for i, v := range contentObjs {
 		if v.Type == TWITCH {
 			// calculates a rough estimate for bg length based on content title
 			// base on font size?
-			tLength := float64(len(v.Title) * 22)
-			cLength := float64(len(v.CreatorName) * 22)
-			bgLength := math.Max(tLength, cLength)
+			tLength := float64(len(v.Title) * 16)
+			cLength := float64(len(v.CreatorName) * 16)
+			bgLength := math.Max(tLength, cLength) + 3.5*xPos 
 			slide := bgLength / slideSpeed
 			bgFilter += fmt.Sprintf(`overlay=x='if(lt(t,%f),NAN,if(lt(t,%f),-w+(t-%f)*%f,if(lt(t,%f),-w+%f,-w+%f-(t-%f)*%f)))':%s`, cursor, cursor+slide, cursor, slideSpeed, cursor+slide+duration, slide*slideSpeed, slide*slideSpeed, cursor+slide+duration, slideSpeed, yPosition)
 			if i < len(contentObjs)-1 {

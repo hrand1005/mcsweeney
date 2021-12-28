@@ -23,6 +23,7 @@ import (
 	"mcsweeney/content"
 	"mcsweeney/db"
 	"os"
+    "os/exec"
 )
 
 func main() {
@@ -95,9 +96,13 @@ func main() {
 			Title:    "Intro",
 			Url:      c.Intro.Path,
 			Duration: c.Intro.Duration,
+            Type: content.CUSTOM,
 		}
 		contentObjs = append([]*content.Content{intro}, contentObjs...)
 	}
+
+    // clean up existing files
+    removeTempFiles()
 
 	compiledVid, err := content.Concatenate(contentObjs, "compiled-vid.mp4")
 	if err != nil {
@@ -158,6 +163,11 @@ func Filter(c *content.Content, f config.Filters) bool {
 	return c.Language == f.Language
 }
 
+func removeTempFiles() {
+    // No need to check errors, as they may appear if no temp files exist
+    cmd := exec.Command("/bin/sh", "./cleanup.sh")
+    cmd.Run()
+}
 // Consider this in the final version
 /*
 func main(){
