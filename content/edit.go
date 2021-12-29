@@ -24,13 +24,13 @@ func (c *Content) ApplyOverlay(contentObjs []*Content, overlay Overlay) error {
 	bgFilters := generateOverlayBackground(contentObjs, overlay)
 	tFilters := generateOverlayWithFadeArgs(contentObjs, overlay)
 
-    // Count overlay-able content
-    overlayCount := 0
-    for _, v := range contentObjs {
-        if v.Type == TWITCH {
-            overlayCount++
-        }
-    }
+	// Count overlay-able content
+	overlayCount := 0
+	for _, v := range contentObjs {
+		if v.Type == TWITCH {
+			overlayCount++
+		}
+	}
 
 	// create ffmpeg command, using complex filter args for overlay and text
 	// TODO: fix this
@@ -128,12 +128,12 @@ func generateOverlayWithFadeArgs(contentObjs []*Content, args Overlay) (allFilte
 	yPosition := fmt.Sprintf(`y=%v`, yPos)
 
 	var cursor float64
-    first := true
+	first := true
 	for _, v := range contentObjs {
 		if v.Type == TWITCH {
-            if first != true {
-                allFilters += ","
-            }
+			if first != true {
+				allFilters += ","
+			}
 			title := formatOverlayString(v.Title)
 			creator := formatOverlayString(v.CreatorName)
 			overlayText := fmt.Sprintf("text=%s\n%s:", title, creator)
@@ -141,7 +141,7 @@ func generateOverlayWithFadeArgs(contentObjs []*Content, args Overlay) (allFilte
 			alpha := fmt.Sprintf(`alpha='if(lt(t,%f),0,if(lt(t,%f),(t-%f)/1,if(lt(t,%f),1,if(lt(t,%f),(1-(t-%f))/1,0))))':`, cursor+0.5, cursor+0.5+fade, cursor+0.5, cursor+duration, cursor+duration+fade, cursor+duration)
 			fullOverlay := font + overlayText + fontSize + fontColor + alpha + xPosition + yPosition
 			allFilters += fullOverlay
-            first = false
+			first = false
 		}
 
 		cursor += v.Duration
@@ -155,12 +155,12 @@ func generateOverlayBackground(contentObjs []*Content, args Overlay) (bgFilter s
 	yPosition := fmt.Sprintf(`y=%v`, yPos-30)
 
 	var cursor float64
-    first := true
+	first := true
 	for _, v := range contentObjs {
 		if v.Type == TWITCH {
-            if first != true {
-                bgFilter += ","
-            }
+			if first != true {
+				bgFilter += ","
+			}
 			// calculates a rough estimate for bg length based on content title
 			// base on font size?
 			tLength := float64(len(v.Title) * 16)
@@ -168,7 +168,7 @@ func generateOverlayBackground(contentObjs []*Content, args Overlay) (bgFilter s
 			bgLength := math.Max(tLength, cLength) + 3.5*xPos
 			slide := bgLength / slideSpeed
 			bgFilter += fmt.Sprintf(`overlay=x='if(lt(t,%f),NAN,if(lt(t,%f),-w+(t-%f)*%f,if(lt(t,%f),-w+%f,-w+%f-(t-%f)*%f)))':%s`, cursor, cursor+slide, cursor, slideSpeed, cursor+slide+duration, slide*slideSpeed, slide*slideSpeed, cursor+slide+duration, slideSpeed, yPosition)
-            first = false
+			first = false
 		}
 
 		cursor += v.Duration
