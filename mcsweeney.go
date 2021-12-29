@@ -48,7 +48,7 @@ func main() {
 	}
 
 	tries := 0
-	contentObjs := make([]*content.Content, 0, c.Source.Query.First)
+	contentObjs := make([]*content.Content, 0, c.Source.Query.First+2)
 	for len(contentObjs) < c.Source.Query.First {
 		tries++
 		fmt.Printf("Have: %v, Want: %v\nGetting more content.\n", len(contentObjs), c.Source.Query.First)
@@ -101,6 +101,17 @@ func main() {
 		contentObjs = append([]*content.Content{intro}, contentObjs...)
 	}
 
+	// check for intro, create if applicable
+	if c.Outro != (config.Outro{}) {
+		Outro := &content.Content{
+			Title:    "Outro",
+			Url:      c.Outro.Path,
+			Duration: c.Outro.Duration,
+			Type:     content.CUSTOM,
+		}
+		contentObjs = append(contentObjs, Outro)
+	}
+
 	// clean up existing files
 	removeTempFiles()
 
@@ -116,27 +127,30 @@ func main() {
 		log.Fatal(err)
 	}
 
-	/*
-		shareIntf, err := content.NewSharer(c.Destination.Platform, c.Destination.Credentials)
-		if err != nil {
-			fmt.Println("Couldn't create content-sharer.")
-			log.Fatal(err)
-		}
+    shareIntf, err := content.NewSharer(c.Destination.Platform, c.Destination.Credentials)
+    if err != nil {
+        fmt.Println("Couldn't create content-sharer.")
+        log.Fatal(err)
+    }
 
-		// set final Content object's fields with config args
-		compiledVid.Title = c.Destination.Title
-		compiledVid.Description = c.Destination.Description + compiledVid.Description // appends the default credits description
-		compiledVid.Keywords = c.Destination.Keywords
-		compiledVid.Privacy = c.Destination.Privacy
+    // set final Content object's fields with config args
+    compiledVid.Title = c.Destination.Title
+    compiledVid.Description = c.Destination.Description + compiledVid.Description // appends the default credits description
+    compiledVid.Keywords = c.Destination.Keywords
+    compiledVid.Privacy = c.Destination.Privacy
 
-		err = shareIntf.Share(compiledVid)
-		if err != nil {
-			fmt.Println("Couldn't share content.")
-			log.Fatal(err)
-		}
+    err = shareIntf.Share(compiledVid)
+    if err != nil {
+        fmt.Println("Couldn't share content.")
+        os.Remove(c.Destination.TokenCache)
+        fmt.Println("Retrying after clearing token cache...")
+        err = shareIntf.Share(compiledVid)
+        if err != nil {
+            log.Fatal(err)
+        }
+    }
 
-		fmt.Println("Content shared successfully!")
-	*/
+    fmt.Println("Content shared successfully!")
 
 	// TODO: table / data for uploaded videos that can be updated at a later
 	// time with analytics

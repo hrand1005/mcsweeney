@@ -60,6 +60,7 @@ func (y *YoutubeSharer) Share(v *Content) error {
 	if err != nil {
 		return fmt.Errorf("Couldn't upload file: %v", err)
 	}
+
 	fmt.Printf("%s uploaded successfully!\nTitle: %s\n", v.Path, v.Title)
 	fmt.Println("Response: ", response)
 

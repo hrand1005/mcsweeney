@@ -11,6 +11,7 @@ import (
 // Contains the full configuration of a content strategy
 type Config struct {
 	Intro       Intro       `yaml:"intro"`
+    Outro Outro `yaml:"outro"`
 	Source      Source      `yaml:"source"`
 	Destination Destination `yaml:"destination"`
 	Filters     Filters     `yaml:"filters"`
@@ -21,6 +22,12 @@ type Config struct {
 type Intro struct {
 	Path     string  `yaml:"path"`
 	Duration float64 `yaml:"duration"`
+}
+
+// Contains outro information for prepended content
+type Outro struct {
+    Path string `yaml:"path"`
+    Duration float64 `yaml:"duration"`
 }
 
 // Contains required fields to pull raw content from platform
@@ -52,6 +59,7 @@ type Destination struct {
 	Category    string              `yaml:"category"`
 	Keywords    string              `yaml:"keywords"`
 	Privacy     content.Privacy     `yaml:"privacy"`
+    TokenCache string `yaml:"token-cache"`
 }
 
 // Contains options for content editing
