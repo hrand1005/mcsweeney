@@ -15,10 +15,10 @@ type TwitchGetter struct {
 	token  string
 }
 
-func NewTwitchGetter(credentials string, query Query) (*TwitchGetter, error) {
+func newTwitchGetter(credentials string, query Query) (*TwitchGetter, error) {
 	clientID, token, err := loadTwitchCredentials(credentials)
 	if err != nil {
-		return nil, fmt.Errorf("Couldn't load credentials, err: %v", err)
+		return nil, err
 	}
 	client, err := helix.NewClient(&helix.Options{
 		ClientID: clientID,
@@ -37,7 +37,7 @@ func NewTwitchGetter(credentials string, query Query) (*TwitchGetter, error) {
 	}, nil
 }
 
-func (t *TwitchGetter) Get() ([]*Content, error) {
+func (t *TwitchGetter) Get() ([]Component, error) {
 	t.client.SetUserAccessToken(t.token)
 	defer t.client.SetUserAccessToken("")
 
@@ -48,17 +48,25 @@ func (t *TwitchGetter) Get() ([]*Content, error) {
 	// updates the 'cursor' for where to start retrieving data
 	t.query.After = twitchResp.Data.Pagination.Cursor
 
-	clips := twitchResp.Data.Clips
-	if err != nil || len(clips) == 0 {
+	twitchClips := twitchResp.Data.Clips
+	if err != nil || len(twitchClips) == 0 {
 		return nil, fmt.Errorf("Couldn't get clips: %v", err)
 	}
 
-	contentObjs := make([]*Content, 0, len(clips))
-	for _, v := range clips {
-		contentObjs = append(contentObjs, convertClipToContentObj(&v))
+	clips := make([]Component, 0, len(twitchClips))
+	for _, v := range twitchClips {
+		clips = append(clips, &Clip{
+			author:      v.CreatorName,
+			broadcaster: v.BroadcasterName,
+			duration:    v.Duration,
+			language:    v.Language,
+			path:        strings.SplitN(v.ThumbnailURL, "-preview", 2)[0] + ".mp4",
+			platform:    TWITCH,
+			title:       v.Title,
+		})
 	}
 
-	return contentObjs, nil
+	return clips, nil
 }
 
 func buildQuery(query Query) *helix.ClipsParams {
@@ -70,20 +78,6 @@ func buildQuery(query Query) *helix.ClipsParams {
 		First:     query.First,
 		StartedAt: helix.Time{Time: startTime},
 	}
-}
-
-func convertClipToContentObj(clip *helix.Clip) (c *Content) {
-	c = &Content{}
-	c.Channel = "https://twitch.tv/" + clip.BroadcasterName
-	c.ClippedBy = clip.CreatorName
-	c.CreatorName = clip.BroadcasterName
-	c.Duration = clip.Duration
-	c.Language = clip.Language
-	c.Title = clip.Title
-	c.Type = TWITCH
-	c.Url = strings.SplitN(clip.ThumbnailURL, "-preview", 2)[0] + ".mp4"
-
-	return
 }
 
 func loadTwitchCredentials(path string) (clientID string, token string, err error) {
