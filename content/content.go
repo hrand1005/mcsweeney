@@ -1,7 +1,7 @@
 package content
 
 import (
-	"fmt"
+	"errors"
 )
 
 // Composite is defined by methods for adding, removing, and retrieving components
@@ -13,6 +13,7 @@ type Composite interface {
 // Component is defined by an interface for accepting visitors
 type Component interface {
 	Accept( /*v *Visitor*/ )
+	Path() string
 }
 
 // Getter is defined by a method for retrieving new components
@@ -32,6 +33,10 @@ type Query struct {
 	Days   int
 }
 
+// PlatformNotFound is returned when attempting an operation on an invalid
+// platform argument
+var PlatformNotFound error = errors.New("Platform not found.")
+
 // NewGetter returns new getter interface to the user to suit their platform.
 // The credentials string should be a path to a file containing token and client
 // info. TODO: simplify this interface accross getters when supporting new
@@ -41,6 +46,19 @@ func NewGetter(platform Platform, credentials string, query Query) (Getter, erro
 	case TWITCH:
 		return newTwitchGetter(credentials, query)
 	default:
-		return nil, fmt.Errorf("No such content getter for platform '%s'", platform)
+		return nil, PlatformNotFound
+	}
+}
+
+// NewSharer returns new sharer interface to the user to suit their platform.
+// The credentials string should be a path to a file containing token and client
+// info. TODO: simplify this interface accross sharers when supporting new
+// content sources.
+func NewSharer(platform Platform, credentials string) (Sharer, error) {
+	switch platform {
+	case YOUTUBE:
+		return newYoutubeSharer(credentials)
+	default:
+		return nil, PlatformNotFound
 	}
 }

@@ -3,6 +3,7 @@ package content
 // Video represents a composite object with a slice of component interfaces
 type Video struct {
 	components []Component
+	path       string
 }
 
 // Append implements the interface for Composite.Append(). It requires a component
@@ -25,4 +26,11 @@ func (v *Video) Accept() {
 	for _, c := range v.components {
 		c.Accept()
 	}
+}
+
+// Path implements the component interface for Video. If the composite video
+// hasn't been instantiated by encoding and concatenating its sub-components,
+// an empty string will be returned.
+func (v *Video) Path() string {
+	return v.path
 }

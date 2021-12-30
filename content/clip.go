@@ -27,3 +27,8 @@ func (c *Clip) Accept() {
 	fmt.Println("Accept not implemented for Clip.")
 	return
 }
+
+// Path implements the component interface for Clip.
+func (c *Clip) Path() string {
+	return c.path
+}
