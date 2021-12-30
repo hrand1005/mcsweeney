@@ -14,8 +14,3 @@ func (o *Outro) Accept() {
 	fmt.Println("Accept not implemented for Outro.")
 	return
 }
-
-// Path implements the component interface for outro.
-func (o *Outro) Path() string {
-	return o.path
-}

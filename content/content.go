@@ -13,7 +13,6 @@ type Composite interface {
 // Component is defined by an interface for accepting visitors
 type Component interface {
 	Accept( /*v *Visitor*/ )
-	Path() string
 }
 
 // Getter is defined by a method for retrieving new components
@@ -23,7 +22,7 @@ type Getter interface {
 
 // Sharer is defined by a method to share a component
 type Sharer interface {
-	Share(Component) error
+	Share(Video) error
 }
 
 // Query defines fields for retrieving content from external sources.
@@ -44,7 +43,7 @@ var PlatformNotFound error = errors.New("Platform not found.")
 func NewGetter(platform Platform, credentials string, query Query) (Getter, error) {
 	switch platform {
 	case TWITCH:
-		return newTwitchGetter(credentials, query)
+		return NewTwitchGetter(credentials, query)
 	default:
 		return nil, PlatformNotFound
 	}
@@ -57,7 +56,7 @@ func NewGetter(platform Platform, credentials string, query Query) (Getter, erro
 func NewSharer(platform Platform, credentials string) (Sharer, error) {
 	switch platform {
 	case YOUTUBE:
-		return newYoutubeSharer(credentials)
+		return NewYoutubeSharer(credentials)
 	default:
 		return nil, PlatformNotFound
 	}

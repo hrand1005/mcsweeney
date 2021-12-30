@@ -19,16 +19,16 @@ type YoutubeSharer struct {
 	client *http.Client
 }
 
-func newYoutubeSharer(credentials string) (*YoutubeSharer, error) {
+func NewYoutubeSharer(credentials string) (*YoutubeSharer, error) {
 	client := GetClient(credentials, youtube.YoutubeUploadScope)
 	return &YoutubeSharer{
 		client: client,
 	}, nil
 }
 
-func (y *YoutubeSharer) Share(v Component) error {
+func (y *YoutubeSharer) Share(v Video) error {
 	//TODO: perform checks on the inputs
-	if v.Path() == "" {
+	if v.Path == "" {
 		return fmt.Errorf("cannot upload nil file")
 	}
 	service, err := youtube.New(y.client)
@@ -50,10 +50,10 @@ func (y *YoutubeSharer) Share(v Component) error {
 	insertArgs := []string{"snippet", "status"}
 	call := service.Videos.Insert(insertArgs, upload)
 
-	file, err := os.Open(v.Path())
+	file, err := os.Open(v.Path)
 	defer file.Close()
 	if err != nil {
-		return fmt.Errorf("Couldn't open file: %s, %v", v.Path(), err)
+		return fmt.Errorf("Couldn't open file: %s, %v", v.Path, err)
 	}
 
 	response, err := call.Media(file).Do()
@@ -61,7 +61,7 @@ func (y *YoutubeSharer) Share(v Component) error {
 		return fmt.Errorf("Couldn't upload file: %v", err)
 	}
 
-	fmt.Printf("%s uploaded successfully!", v.Path())
+	fmt.Printf("%s uploaded successfully!", v.Path)
 	fmt.Println("Response: ", response)
 
 	return nil

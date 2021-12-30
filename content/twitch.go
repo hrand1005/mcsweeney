@@ -15,7 +15,7 @@ type TwitchGetter struct {
 	token  string
 }
 
-func newTwitchGetter(credentials string, query Query) (*TwitchGetter, error) {
+func NewTwitchGetter(credentials string, query Query) (*TwitchGetter, error) {
 	clientID, token, err := loadTwitchCredentials(credentials)
 	if err != nil {
 		return nil, err
@@ -56,13 +56,13 @@ func (t *TwitchGetter) Get() ([]Component, error) {
 	clips := make([]Component, 0, len(twitchClips))
 	for _, v := range twitchClips {
 		clips = append(clips, &Clip{
-			author:      v.CreatorName,
-			broadcaster: v.BroadcasterName,
-			duration:    v.Duration,
-			language:    v.Language,
-			path:        strings.SplitN(v.ThumbnailURL, "-preview", 2)[0] + ".mp4",
-			platform:    TWITCH,
-			title:       v.Title,
+			Author:      v.CreatorName,
+			Broadcaster: v.BroadcasterName,
+			Duration:    v.Duration,
+			Language:    v.Language,
+			Path:        strings.SplitN(v.ThumbnailURL, "-preview", 2)[0] + ".mp4",
+			Platform:    TWITCH,
+			Title:       v.Title,
 		})
 	}
 
