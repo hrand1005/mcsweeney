@@ -72,6 +72,15 @@ func TestNewSharer(t *testing.T) {
 			wantType: reflect.TypeOf(&content.YoutubeSharer{}),
 			wantErr:  nil,
 		},
+		{
+			name: "Platform not found.",
+			args: args{
+				credentials: "fakes/fake_youtube_credentials.json",
+				platform:    content.Platform("Not Found"),
+			},
+			wantType: nil,
+			wantErr:  content.PlatformNotFound,
+		},
 	}
 	for _, tc := range tests {
 		got, gotErr := content.NewSharer(tc.args.platform, tc.args.credentials)
