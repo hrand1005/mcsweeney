@@ -102,3 +102,69 @@ func TestDescriptionGeneratorVisitClip(t *testing.T) {
 		}
 	}
 }
+
+// TestDescriptionGeneratorVisitMany calls multiple visit methods on
+// DescriptionGenerator in sequence and checks that the resulting string
+// returned by String() properly represents the visited element sequence.
+func TestDescriptionGeneratorVisitMany(t *testing.T) {
+	tests := []struct {
+		name    string
+		intros  []*content.Intro
+		clips   []*content.Clip
+		outros  []*content.Outro
+		visitor *content.DescriptionGenerator
+		want    string
+	}{
+		{
+			name: "Description generation for Intro, three clips, and outro.",
+			intros: []*content.Intro{
+				&content.Intro{
+					Description: "Intro description.",
+					Duration:    4.0,
+				},
+			},
+			clips: []*content.Clip{
+				&content.Clip{
+					Author:      "TestAuthor",
+					Broadcaster: "TestBroadcaster",
+					Duration:    1.0,
+					Title:       "Test Title",
+				},
+				&content.Clip{},
+				&content.Clip{
+					Author:      "TestTwitchAuthor",
+					Broadcaster: "TestTwitchBroadcaster",
+					Duration:    20.0,
+					Platform:    content.TWITCH,
+					Title:       "Test Twitch Title",
+				},
+			},
+			outros: []*content.Outro{
+				&content.Outro{
+					Description: "Outro description.",
+					Duration:    3.0,
+				},
+			},
+			visitor: &content.DescriptionGenerator{},
+			want: "Intro description." +
+				"\n\n[0:04] 'Test Title'\nStreamed by TestBroadcaster at \nClipped by TestAuthor\n" +
+				"\n\n[0:05] 'Test Twitch Title'\nStreamed by TestTwitchBroadcaster at https://twitch.tv/TestTwitchBroadcaster\nClipped by TestTwitchAuthor\n" +
+				"Outro description.",
+		},
+	}
+	for _, tc := range tests {
+		// visit all elements
+		for _, intro := range tc.intros {
+			tc.visitor.VisitIntro(intro)
+		}
+		for _, clip := range tc.clips {
+			tc.visitor.VisitClip(clip)
+		}
+		for _, outro := range tc.outros {
+			tc.visitor.VisitOutro(outro)
+		}
+		if tc.visitor.String() != tc.want {
+			t.Fatalf("Got: %s\nWanted: %s", tc.visitor.String(), tc.want)
+		}
+	}
+}
