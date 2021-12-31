@@ -1,16 +1,14 @@
 package content
 
-import (
-	"fmt"
-)
-
-// Outro represents a video.
+// Outro represents a video outro component.
 type Outro struct {
-	path string
+	Description string
+	Duration    float64
+	Path        string
 }
 
 // Accept implements the component interface for Outro.
-func (o *Outro) Accept() {
-	fmt.Println("Accept not implemented for Outro.")
+func (o *Outro) Accept(v Visitor) {
+	v.VisitOutro(o)
 	return
 }

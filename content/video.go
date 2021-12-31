@@ -2,8 +2,9 @@ package content
 
 // Video represents a composite object with a slice of component interfaces
 type Video struct {
-	components []Component
-	Path       string
+	components  []Component
+	Description string
+	Path        string
 }
 
 // Append implements the interface for Composite.Append(). It requires a component
@@ -22,8 +23,8 @@ func (v *Video) Prepend(c Component) error {
 
 // Accept implements the component interface for Video. It calls accept on its
 // child components.
-func (v *Video) Accept() {
+func (v *Video) Accept(t Visitor) {
 	for _, c := range v.components {
-		c.Accept()
+		c.Accept(t)
 	}
 }
