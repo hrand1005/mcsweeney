@@ -123,9 +123,32 @@ func main() {
 	encoder := &content.Encoder{Path: "encoded.txt"}
 	fmt.Printf("About to encode video components...")
 	video.Accept(encoder)
+
+	concatCmd := exec.Command("ffmpeg", "-f", "concat", "-safe", "0", "-i", "encoded.txt", "out.mp4")
+	fmt.Printf("About to concatenate video with ffmpeg command:\n%s\n", concatCmd)
+	concatCmd.Run()
+
+	fmt.Printf("Background: %s\n", c.Options.Overlay.Background)
+	fmt.Printf("Font: %s\n", c.Options.Overlay.Font)
+
+	overlayer := &content.Overlayer{
+		Font:       c.Options.Overlay.Font,
+		Background: c.Options.Overlay.Background,
+	}
+	video.Accept(overlayer)
+
+	args := append(overlayer.Slice(), "final.mp4")
+	args = append([]string{"-i", "out.mp4"}, args...)
+	overlayCmd := exec.Command("ffmpeg", args...)
+	fmt.Println("Applying overlay")
+	err = overlayCmd.Run()
+	if err != nil {
+		fmt.Printf("Couldn't apply overlay\nCommand string\n%s\nErr:\n%v", overlayCmd, err)
+	}
+
 	describer := &content.Describer{}
 	video.Accept(describer)
-	fmt.Printf("Video's description:\n%s\n", describer.String())
+	fmt.Printf("Video's description:\n%s\n", describer)
 
 	/*
 		compiledVid, err := content.Concatenate(contentObjs, "compiled-vid.mp4")

@@ -64,7 +64,6 @@ func (e *Encoder) writeToListfile(s string) {
 	defer f.Close()
 
 	w := fmt.Sprintf("file '%s'\n", s)
-	fmt.Printf("Writing %s to file...\n", w)
 	f.WriteString(w)
 	return
 }

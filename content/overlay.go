@@ -118,6 +118,7 @@ func max(a, b int) int {
 
 func escapeText(s string) string {
 	s = strings.ReplaceAll(s, `'`, `\\\'`)
+	s = strings.ReplaceAll(s, `"`, `\\\"`)
 	s = strings.ReplaceAll(s, `:`, `\\\:`)
 	return strings.ReplaceAll(s, `,`, `\\\,`)
 }

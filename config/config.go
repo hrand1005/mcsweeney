@@ -70,7 +70,7 @@ type Options struct {
 // Contains fields for applying overlays to content
 type Overlay struct {
 	Font       string `yaml:"font"`
-	Background string `yaml:"Background"`
+	Background string `yaml:"background"`
 }
 
 // Loads config from given yaml file, returns Config pointer
