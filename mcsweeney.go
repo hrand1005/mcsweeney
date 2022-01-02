@@ -15,7 +15,6 @@ package main
     - content should be functional as a standalone package
 */
 
-//TODO: maybe we don't need the entire packages?
 import (
 	"fmt"
 	"log"
@@ -48,10 +47,10 @@ func main() {
 	}
 
 	tries := 0
-	contentObjs := make([]*content.Content, 0, c.Source.Query.First+2)
-	for len(contentObjs) < c.Source.Query.First {
+	clips := make([]*content.Clip, 0, c.Source.Query.First+2)
+	for len(clips) < c.Source.Query.First {
 		tries++
-		fmt.Printf("Have: %v, Want: %v\nGetting more content.\n", len(contentObjs), c.Source.Query.First)
+		fmt.Printf("Have: %v, Want: %v\nGetting more content.\n", len(clips), c.Source.Query.First)
 		dirtyContent, err := getIntf.Get()
 		if err != nil {
 			fmt.Println("Couldn't get new content.")
@@ -68,11 +67,11 @@ func main() {
 				fmt.Println("Couldn't check exists for dbIntf.")
 				log.Fatal(err)
 			}
-			if !exists && len(contentObjs) < c.Source.Query.First {
+			if !exists && len(clips) < c.Source.Query.First {
 				valid := Filter(v, c.Filters)
 				if valid {
 					// Log this...
-					contentObjs = append(contentObjs, v)
+					clips = append(clips, v)
 				}
 			}
 			// Log this...
@@ -82,79 +81,91 @@ func main() {
 		}
 	}
 
-	if len(contentObjs) == 0 {
+	if len(clips) == 0 {
 		fmt.Println("Unable to find new content.\nExiting...")
 		return
 	}
 	// Log this...
-	fmt.Printf("Was able to retrieve %v content objects.\n", len(contentObjs))
+	fmt.Printf("Was able to retrieve %v content objects.\n", len(clips))
 	fmt.Println("Number of tries: ", tries)
 
-	// check for intro, create if applicable
-	if c.Intro != (config.Intro{}) {
-		intro := &content.Content{
-			Title:    "Intro",
-			Url:      c.Intro.Path,
-			Duration: c.Intro.Duration,
-			Type:     content.CUSTOM,
-		}
-		contentObjs = append([]*content.Content{intro}, contentObjs...)
+	// create composite video object from clips
+	video := &content.Video{
+		Description: c.Destination.Description,
 	}
 
-	// check for intro, create if applicable
-	if c.Outro != (config.Outro{}) {
-		Outro := &content.Content{
-			Title:    "Outro",
-			Url:      c.Outro.Path,
-			Duration: c.Outro.Duration,
-			Type:     content.CUSTOM,
-		}
-		contentObjs = append(contentObjs, Outro)
+	// append the clips to the video
+	for _, v := range clips {
+		video.Append(v)
 	}
+
+	// check for intro, create and append to video if applicable
+	if c.Intro != (config.Intro{}) {
+		intro := &content.Intro{
+			Path:     c.Intro.Path,
+			Duration: c.Intro.Duration,
+		}
+		video.Prepend(intro)
+	}
+
+	// check for outro, create and append to video if applicable
+	if c.Outro != (config.Outro{}) {
+		outro := &content.Outro{
+			Path:     c.Outro.Path,
+			Duration: c.Outro.Duration,
+		}
+		video.Append(outro)
+	}
+
+	describer := &content.Describer{}
+	video.Accept(describer)
+	fmt.Printf("Video's description:\n%s\n", describer.String())
 
 	// clean up existing files
 	removeTempFiles()
 
-	compiledVid, err := content.Concatenate(contentObjs, "compiled-vid.mp4")
-	if err != nil {
-		fmt.Println("Couldn't compile content.")
-		log.Fatal(err)
-	}
-
-	err = compiledVid.ApplyOverlay(contentObjs, c.Options.Overlay)
-	if err != nil {
-		fmt.Println("Couldn't apply overlay.")
-		log.Fatal(err)
-	}
-
-	shareIntf, err := content.NewSharer(c.Destination.Platform, c.Destination.Credentials)
-	if err != nil {
-		fmt.Println("Couldn't create content-sharer.")
-		log.Fatal(err)
-	}
-
-	// set final Content object's fields with config args
-	compiledVid.Title = c.Destination.Title
-	compiledVid.Description = c.Destination.Description + compiledVid.Description // appends the default credits description
-	compiledVid.Keywords = c.Destination.Keywords
-	compiledVid.Privacy = c.Destination.Privacy
-
-	err = shareIntf.Share(compiledVid)
-	if err != nil {
-		fmt.Println("Couldn't share content.")
-		os.Remove(c.Destination.TokenCache)
-		fmt.Println("Retrying after clearing token cache...")
-		err = shareIntf.Share(compiledVid)
+	/*
+		compiledVid, err := content.Concatenate(contentObjs, "compiled-vid.mp4")
 		if err != nil {
+			fmt.Println("Couldn't compile content.")
 			log.Fatal(err)
 		}
-	}
 
-	fmt.Println("Content shared successfully!")
+		err = compiledVid.ApplyOverlay(contentObjs, c.Options.Overlay)
+		if err != nil {
+			fmt.Println("Couldn't apply overlay.")
+			log.Fatal(err)
+		}
+
+		shareIntf, err := content.NewSharer(c.Destination.Platform, c.Destination.Credentials)
+		if err != nil {
+			fmt.Println("Couldn't create content-sharer.")
+			log.Fatal(err)
+		}
+
+		// set final Content object's fields with config args
+		compiledVid.Title = c.Destination.Title
+		compiledVid.Description = c.Destination.Description + compiledVid.Description // appends the default credits description
+		compiledVid.Keywords = c.Destination.Keywords
+		compiledVid.Privacy = c.Destination.Privacy
+
+		err = shareIntf.Share(compiledVid)
+		if err != nil {
+			fmt.Println("Couldn't share content.")
+			os.Remove(c.Destination.TokenCache)
+			fmt.Println("Retrying after clearing token cache...")
+			err = shareIntf.Share(compiledVid)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+
+		fmt.Println("Content shared successfully!")
+	*/
 
 	// TODO: table / data for uploaded videos that can be updated at a later
 	// time with analytics
-	for _, v := range contentObjs {
+	for _, v := range clips {
 		err := dbIntf.Insert(v)
 		if err != nil {
 			fmt.Println("Couldn't insert to dbIntf.")
@@ -167,10 +178,10 @@ func main() {
 
 // Filter checks whether the given content object passes all filters. If
 // yes, returns true, else false
-func Filter(c *content.Content, f config.Filters) bool {
+func Filter(c *content.Clip, f config.Filters) bool {
 	//TODO: find a way to iterate through all filters
 	for _, v := range f.Blacklist {
-		if c.CreatorName == v {
+		if c.Broadcaster == v {
 			return false
 		}
 	}

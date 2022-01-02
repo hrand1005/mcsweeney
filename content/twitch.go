@@ -37,7 +37,7 @@ func NewTwitchGetter(credentials string, query Query) (*TwitchGetter, error) {
 	}, nil
 }
 
-func (t *TwitchGetter) Get() ([]Component, error) {
+func (t *TwitchGetter) Get() ([]*Clip, error) {
 	t.client.SetUserAccessToken(t.token)
 	defer t.client.SetUserAccessToken("")
 
@@ -53,7 +53,7 @@ func (t *TwitchGetter) Get() ([]Component, error) {
 		return nil, fmt.Errorf("Couldn't get clips: %v", err)
 	}
 
-	clips := make([]Component, 0, len(twitchClips))
+	clips := make([]*Clip, 0, len(twitchClips))
 	for _, v := range twitchClips {
 		clips = append(clips, &Clip{
 			Author:      v.CreatorName,

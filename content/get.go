@@ -2,7 +2,7 @@ package content
 
 // Getter is defined by a method for retrieving new components
 type Getter interface {
-	Get() ([]Component, error)
+	Get() ([]*Clip, error)
 }
 
 // NewGetter returns new getter interface to the user to suit their platform.

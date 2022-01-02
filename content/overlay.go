@@ -33,11 +33,12 @@ func (o *Overlayer) VisitOutro(u *Outro) {
 // TODO: Make these values smarter and/or configurable
 // TODO: Create default values, allow override
 const (
+	// define constants for overlay background
 	OverlayDuration float64 = 3
 	SlideSpeed      float64 = 2000
 	XPosition       int     = 20
 	YPosition       int     = 500
-
+	// define constants specific to the text overlay and fade
 	FontColor string  = "ffffff"
 	FontSize  int     = 26
 	TextFade  float64 = 0.5
