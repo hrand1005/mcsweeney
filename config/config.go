@@ -33,8 +33,8 @@ type Outro struct {
 // Contains required fields to pull raw content from platform
 type Source struct {
 	Platform    content.Platform `yaml:"platform"`
-	Credentials string              `yaml:"credentials"`
-	Query       Query               `yaml:"query"`
+	Credentials string           `yaml:"credentials"`
+	Query       Query            `yaml:"query"`
 }
 
 // Contains query arguments to be used to gather content
@@ -53,13 +53,13 @@ type Filters struct {
 // Contains required fields to push content to platform
 type Destination struct {
 	Platform    content.Platform `yaml:"platform"`
-	Credentials string              `yaml:"credentials"`
-	Title       string              `yaml:"title"`
-	Description string              `yaml:"description"`
-	Category    string              `yaml:"category"`
-	Keywords    string              `yaml:"keywords"`
-	Privacy     content.Privacy     `yaml:"privacy"`
-	TokenCache  string              `yaml:"token-cache"`
+	Credentials string           `yaml:"credentials"`
+	Title       string           `yaml:"title"`
+	Description string           `yaml:"description"`
+	Category    string           `yaml:"category"`
+	Keywords    string           `yaml:"keywords"`
+	Privacy     content.Privacy  `yaml:"privacy"`
+	TokenCache  string           `yaml:"token-cache"`
 }
 
 // Contains options for content editing
@@ -69,8 +69,8 @@ type Options struct {
 
 // Contains fields for applying overlays to content
 type Overlay struct {
-    Font string `yaml:"font"`
-    Background string `yaml:"Background"`
+	Font       string `yaml:"font"`
+	Background string `yaml:"Background"`
 }
 
 // Loads config from given yaml file, returns Config pointer
