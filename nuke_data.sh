@@ -3,3 +3,5 @@
 rm tmp/*
 rm *.db
 rm *.mp4
+rm *.mkv
+rm *.txt

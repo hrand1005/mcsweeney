@@ -117,12 +117,15 @@ func main() {
 		video.Append(outro)
 	}
 
+	// clean up existing files
+	removeTempFiles()
+
+	encoder := &content.Encoder{Path: "encoded.txt"}
+	fmt.Printf("About to encode video components...")
+	video.Accept(encoder)
 	describer := &content.Describer{}
 	video.Accept(describer)
 	fmt.Printf("Video's description:\n%s\n", describer.String())
-
-	// clean up existing files
-	removeTempFiles()
 
 	/*
 		compiledVid, err := content.Concatenate(contentObjs, "compiled-vid.mp4")

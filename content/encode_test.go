@@ -9,6 +9,10 @@ import (
 	"testing"
 )
 
+const (
+	EncoderPath string = "encoded.txt"
+)
+
 // TestEncoderVisitIntro calls Encoder.VisitIntro and provides an Intro element,
 // checking that the outfile is written to the file returned by Path, and that
 // the contents of the file are correct.
@@ -23,14 +27,14 @@ func TestEncoderVisitIntro(t *testing.T) {
 		{
 			name:    "Nominal encoding for intro.",
 			intro:   &content.Intro{Path: "fakes/intro.mp4"},
-			visitor: &content.Encoder{Path: "encoded.txt"},
-			want:    "file 'fakesintro.mkv'",
+			visitor: &content.Encoder{Path: EncoderPath},
+			want:    "file '0.mkv'",
 			wantErr: nil,
 		},
 		{
 			name:    "No encoding.",
 			intro:   &content.Intro{},
-			visitor: &content.Encoder{Path: "encoded.txt"},
+			visitor: &content.Encoder{Path: EncoderPath},
 			want:    "",
 			wantErr: os.ErrNotExist,
 		},
@@ -44,6 +48,7 @@ func TestEncoderVisitIntro(t *testing.T) {
 			if errors.Is(err, tc.wantErr) {
 				break
 			}
+			os.Remove(tc.visitor.Path)
 			t.Fatalf("Error opening file: %v", err)
 		}
 		defer f.Close()
@@ -56,15 +61,18 @@ func TestEncoderVisitIntro(t *testing.T) {
 
 		// check that scan didn't result in an error
 		if err = s.Err(); err != nil {
+			os.Remove(tc.visitor.Path)
 			t.Fatalf("Error scanning file: %v", err)
 		}
 
 		// check for correct file contents
 		if got != tc.want {
+			os.Remove(tc.visitor.Path)
 			t.Fatalf("Got: %s\nWanted: %s", got, tc.want)
 		}
 		os.Remove(tc.visitor.Path)
 	}
+	os.Remove(EncoderPath)
 }
 
 // TestEncoderVisitOutro calls Encoder.VisitOutro and provides an Outro element,
@@ -81,14 +89,14 @@ func TestEncoderVisitOutro(t *testing.T) {
 		{
 			name:    "Nominal encoding for outro.",
 			outro:   &content.Outro{Path: "fakes/outro.mp4"},
-			visitor: &content.Encoder{Path: "encoded.txt"},
-			want:    "file 'fakesoutro.mkv'",
+			visitor: &content.Encoder{Path: EncoderPath},
+			want:    "file '0.mkv'",
 			wantErr: nil,
 		},
 		{
 			name:    "No encoding.",
 			outro:   &content.Outro{},
-			visitor: &content.Encoder{Path: "encoded.txt"},
+			visitor: &content.Encoder{Path: EncoderPath},
 			want:    "",
 			wantErr: os.ErrNotExist,
 		},
@@ -102,6 +110,7 @@ func TestEncoderVisitOutro(t *testing.T) {
 			if errors.Is(err, tc.wantErr) {
 				break
 			}
+			os.Remove(tc.visitor.Path)
 			t.Fatalf("Error opening file: %v", err)
 		}
 		defer f.Close()
@@ -114,15 +123,18 @@ func TestEncoderVisitOutro(t *testing.T) {
 
 		// check that scan didn't result in an error
 		if err = s.Err(); err != nil {
+			os.Remove(tc.visitor.Path)
 			t.Fatalf("Error scanning file: %v", err)
 		}
 
 		// check for correct file contents
 		if got != tc.want {
+			os.Remove(tc.visitor.Path)
 			t.Fatalf("Got: %s\nWanted: %s", got, tc.want)
 		}
 		os.Remove(tc.visitor.Path)
 	}
+	os.Remove(EncoderPath)
 }
 
 // TestEncoderVisitClip calls Encoder.VisitClip and provides an Clip element,
@@ -139,14 +151,14 @@ func TestEncoderVisitClip(t *testing.T) {
 		{
 			name:    "Nominal encoding for clip.",
 			clip:    &content.Clip{Path: "fakes/clip.mp4"},
-			visitor: &content.Encoder{Path: "encoded.txt"},
-			want:    "file 'fakesclip.mkv'",
+			visitor: &content.Encoder{Path: EncoderPath},
+			want:    "file '0.mkv'",
 			wantErr: nil,
 		},
 		{
 			name:    "No encoding.",
 			clip:    &content.Clip{},
-			visitor: &content.Encoder{Path: "encoded.txt"},
+			visitor: &content.Encoder{Path: EncoderPath},
 			want:    "",
 			wantErr: os.ErrNotExist,
 		},
@@ -160,6 +172,7 @@ func TestEncoderVisitClip(t *testing.T) {
 			if errors.Is(err, tc.wantErr) {
 				break
 			}
+			os.Remove(tc.visitor.Path)
 			t.Fatalf("Error opening file: %v", err)
 		}
 		defer f.Close()
@@ -172,13 +185,16 @@ func TestEncoderVisitClip(t *testing.T) {
 
 		// check that scan didn't result in an error
 		if err = s.Err(); err != nil {
+			os.Remove(tc.visitor.Path)
 			t.Fatalf("Error scanning file: %v", err)
 		}
 
 		// check for correct file contents
 		if got != tc.want {
+			os.Remove(tc.visitor.Path)
 			t.Fatalf("Got: %s\nWanted: %s", got, tc.want)
 		}
 		os.Remove(tc.visitor.Path)
 	}
+	os.Remove(EncoderPath)
 }

@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"strings"
+	//"strings"
 )
 
 type Encoder struct {
 	Path    string
 	started bool
+	count   int
 }
 
 // VisitClip implements the visitor interface for Encoder.
@@ -19,7 +20,7 @@ func (e *Encoder) VisitClip(c *Clip) {
 	if c.Path == "" {
 		return
 	}
-	outfile := createOutfile(c.Path)
+	outfile := e.createOutfile(c.Path)
 	e.writeToListfile(outfile)
 	encode(c.Path, outfile)
 	return
@@ -32,7 +33,7 @@ func (e *Encoder) VisitIntro(i *Intro) {
 	if i.Path == "" {
 		return
 	}
-	outfile := createOutfile(i.Path)
+	outfile := e.createOutfile(i.Path)
 	e.writeToListfile(outfile)
 	encode(i.Path, outfile)
 	return
@@ -45,28 +46,25 @@ func (e *Encoder) VisitOutro(o *Outro) {
 	if o.Path == "" {
 		return
 	}
-	outfile := createOutfile(o.Path)
+	outfile := e.createOutfile(o.Path)
 	e.writeToListfile(outfile)
 	encode(o.Path, outfile)
 	return
 }
 
-func createOutfile(p string) (outfile string) {
-	outfile = strings.ReplaceAll(p, "/", "")
-	outfile = strings.TrimSuffix(outfile, ".mp4")
-	return outfile + ".mkv"
+func (e *Encoder) createOutfile(p string) (outfile string) {
+	outfile = fmt.Sprintf("%v.mkv", e.count)
+	e.count++
+	return
 }
 
 func (e *Encoder) writeToListfile(s string) {
-	// if this is the first write, then create the outfile
-	var f *os.File
-	if !e.started {
-		f, _ = os.Create(e.Path)
-		e.started = true
-	}
+	// creates file if not exists, else opens existing file
+	f, _ := os.OpenFile(e.Path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	defer f.Close()
 
 	w := fmt.Sprintf("file '%s'\n", s)
+	fmt.Printf("Writing %s to file...\n", w)
 	f.WriteString(w)
 	return
 }
@@ -78,5 +76,6 @@ const (
 
 func encode(infile string, outfile string) {
 	cmd := exec.Command("ffmpeg", "-i", infile, "-c:v", ffmpegEncoder, "-preset", ffmpegPreset, "-crf", "22", "-c:a", "copy", outfile)
+	fmt.Printf("About to encode...\n%s\n", cmd.String())
 	cmd.Run()
 }
