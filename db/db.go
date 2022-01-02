@@ -14,13 +14,13 @@ type ContentDB struct {
 }
 
 const (
-	createContentTable = `
-        CREATE TABLE IF NOT EXISTS content (
+	createClipsTable = `
+        CREATE TABLE IF NOT EXISTS clips (
             "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
             "url" TEXT 
         );`
-	insertContent = `INSERT OR IGNORE INTO content(url) VALUES (?)`
-	existsContent = `SELECT EXISTS(SELECT 1 FROM content WHERE url=?);`
+	insertClip = `INSERT OR IGNORE INTO clips(url) VALUES (?)`
+	existsClip = `SELECT EXISTS(SELECT 1 FROM clips WHERE url=?);`
 )
 
 func New(filename string) (*ContentDB, error) {
@@ -39,9 +39,9 @@ func New(filename string) (*ContentDB, error) {
 		return nil, fmt.Errorf("Failed to load %s: %v", filename, err)
 	}
 
-	statement, err := db.Prepare(createContentTable)
+	statement, err := db.Prepare(createClipsTable)
 	if err != nil {
-		return nil, fmt.Errorf("Couldn't prepare SQL statement:\n%s\nerr: %v", createContentTable, err)
+		return nil, fmt.Errorf("Couldn't prepare SQL statement:\n%s\nerr: %v", createClipsTable, err)
 	}
 	statement.Exec()
 
@@ -50,24 +50,24 @@ func New(filename string) (*ContentDB, error) {
 	}, nil
 }
 
-func (db *ContentDB) Insert(c *content.Content) error {
-	statement, err := db.handle.Prepare(insertContent)
+func (db *ContentDB) Insert(c *content.Clip) error {
+	statement, err := db.handle.Prepare(insertClip)
 	if err != nil {
-		return fmt.Errorf("Couldn't prepare SQL statement:\n%s\nerr: %v", insertContent, err)
+		return fmt.Errorf("Couldn't prepare SQL statement:\n%s\nerr: %v", insertClip, err)
 	}
-	statement.Exec(c.Url)
+	statement.Exec(c.Path)
 
 	return nil
 }
 
-func (db *ContentDB) Exists(c *content.Content) (bool, error) {
-	statement, err := db.handle.Prepare(existsContent)
+func (db *ContentDB) Exists(c *content.Clip) (bool, error) {
+	statement, err := db.handle.Prepare(existsClip)
 	if err != nil {
-		return false, fmt.Errorf("Couldn't prepare SQL statement:\n%s\nerr: %v", existsContent, err)
+		return false, fmt.Errorf("Couldn't prepare SQL statement:\n%s\nerr: %v", existsClip, err)
 	}
 
 	var res string
-	err = statement.QueryRow(c.Url).Scan(&res)
+	err = statement.QueryRow(c.Path).Scan(&res)
 	if err != nil {
 		return false, fmt.Errorf("Couldn't execute exists statement: %v", err)
 	}
