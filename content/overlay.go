@@ -5,8 +5,8 @@ import (
 	"strings"
 )
 
-// OverlayGenerator generates video overlays for the video components it visits.
-type OverlayGenerator struct {
+// Overlayer generates video overlays for the video components it visits.
+type Overlayer struct {
 	Font       string
 	Background string
 	args       []string
@@ -14,16 +14,16 @@ type OverlayGenerator struct {
 	overlay    string
 }
 
-// VisitIntro implements the visitor interface for OverlayGenerator.
+// VisitIntro implements the visitor interface for Overlayer.
 // Increments internal cursor, but does not alter the overlay string.
-func (o *OverlayGenerator) VisitIntro(i *Intro) {
+func (o *Overlayer) VisitIntro(i *Intro) {
 	o.cursor += i.Duration
 	return
 }
 
-// VisitOutro implements the visitor interface for OverlayGenerator.
+// VisitOutro implements the visitor interface for Overlayer.
 // Increments internal cursor, but does not alter the overlay string.
-func (o *OverlayGenerator) VisitOutro(u *Outro) {
+func (o *Overlayer) VisitOutro(u *Outro) {
 	o.cursor += u.Duration
 	return
 }
@@ -44,10 +44,10 @@ const (
 	TextDelay float64 = 0.5
 )
 
-// VisitClip implements the visitor interface for OverlayGenerator. It generates
+// VisitClip implements the visitor interface for Overlayer. It generates
 // an overlay for the clip using the clips Title and Broadcaster fields, as well
-// as a number of configurable options for the OverlayGenerator instance.
-func (o *OverlayGenerator) VisitClip(c *Clip) {
+// as a number of configurable options for the Overlayer instance.
+func (o *Overlayer) VisitClip(c *Clip) {
 	bgOverlay := o.createOverlayBackground(c)
 	textOverlay := o.createOverlayText(c)
 
@@ -60,7 +60,7 @@ func (o *OverlayGenerator) VisitClip(c *Clip) {
 
 // String returns a string of the generated overlay. The overlay is the
 // aggregate of all visited elements, also reflecting visit order.
-func (o *OverlayGenerator) String() string {
+func (o *Overlayer) String() string {
 	if o.overlay == "" {
 		return ""
 	}
@@ -72,14 +72,14 @@ func (o *OverlayGenerator) String() string {
 }
 
 // Slice returns a slice representation of the generated overlay.
-func (o *OverlayGenerator) Slice() []string {
+func (o *Overlayer) Slice() []string {
 	if len(o.args) == 0 {
 		return nil
 	}
 	return append(o.args, "-filter_complex", strings.TrimRight(o.overlay, ","))
 }
 
-func (o *OverlayGenerator) createOverlayBackground(c *Clip) string {
+func (o *Overlayer) createOverlayBackground(c *Clip) string {
 	// determine the length of the overlay's background, multiply by arbitrary
 	// size coefficient (16), plus x offset to create margins for text
 	bgLen := float64(max(len(c.Title), len(c.Broadcaster)))*16.0 + 3.5*float64(XPosition)
@@ -94,7 +94,7 @@ func (o *OverlayGenerator) createOverlayBackground(c *Clip) string {
 	return fmt.Sprintf(`overlay=%s:%s,`, xString, yString)
 }
 
-func (o *OverlayGenerator) createOverlayText(c *Clip) string {
+func (o *Overlayer) createOverlayText(c *Clip) string {
 	fontString := fmt.Sprintf(`drawtext=fontfile=%s`, o.Font)
 	textString := fmt.Sprintf("text=%s\n%s", escapeText(c.Title), escapeText(c.Broadcaster))
 	sizeString := fmt.Sprintf(`fontsize=%v`, FontSize)

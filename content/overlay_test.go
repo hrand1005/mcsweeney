@@ -5,18 +5,18 @@ import (
 	"testing"
 )
 
-// TestOverlayGeneratorVisitIntro calls OverlayGenerator.VisitIntro and
-// provides an Intro element, checking that the OverlayGenerator's String()
+// TestOverlayerVisitIntro calls Overlayer.VisitIntro and
+// provides an Intro element, checking that the Overlayer's String()
 // method returns the expected string representation.
 // TODO: Decide what overlays should be generated for intros
-// Currently VisitIntro does not change OverlayGenerator's string
-// representation. However, it should still have effects on OverlayGenerator's
-// internal state, such as incrementing the OverlayGenerator's internal cursor.
-func TestOverlayGeneratorVisitIntro(t *testing.T) {
+// Currently VisitIntro does not change Overlayer's string
+// representation. However, it should still have effects on Overlayer's
+// internal state, such as incrementing the Overlayer's internal cursor.
+func TestOverlayerVisitIntro(t *testing.T) {
 	tests := []struct {
 		name    string
 		intro   *content.Intro
-		visitor *content.OverlayGenerator
+		visitor *content.Overlayer
 		want    string
 	}{
 		{
@@ -24,7 +24,7 @@ func TestOverlayGeneratorVisitIntro(t *testing.T) {
 			intro: &content.Intro{
 				Duration: 1.0,
 			},
-			visitor: &content.OverlayGenerator{},
+			visitor: &content.Overlayer{},
 			want:    "",
 		},
 	}
@@ -36,18 +36,18 @@ func TestOverlayGeneratorVisitIntro(t *testing.T) {
 	}
 }
 
-// TestOverlayGeneratorVisitOutro calls OverlayGenerator.VisitOutro and
-// provides an Outro element, checking that the OverlayGenerator's String()
+// TestOverlayerVisitOutro calls Overlayer.VisitOutro and
+// provides an Outro element, checking that the Overlayer's String()
 // method returns the expected string representation.
 // TODO: Decide what overlays should be generated for intros
-// Currently VisitIntro does not change OverlayGenerator's string
-// representation. However, it should still have effects on OverlayGenerator's
-// internal state, such as incrementing the OverlayGenerator's internal cursor.
-func TestOverlayGeneratorVisitOutro(t *testing.T) {
+// Currently VisitIntro does not change Overlayer's string
+// representation. However, it should still have effects on Overlayer's
+// internal state, such as incrementing the Overlayer's internal cursor.
+func TestOverlayerVisitOutro(t *testing.T) {
 	tests := []struct {
 		name    string
 		outro   *content.Outro
-		visitor *content.OverlayGenerator
+		visitor *content.Overlayer
 		want    string
 	}{
 		{
@@ -55,7 +55,7 @@ func TestOverlayGeneratorVisitOutro(t *testing.T) {
 			outro: &content.Outro{
 				Duration: 1.0,
 			},
-			visitor: &content.OverlayGenerator{},
+			visitor: &content.Overlayer{},
 			want:    "",
 		},
 	}
@@ -67,24 +67,24 @@ func TestOverlayGeneratorVisitOutro(t *testing.T) {
 	}
 }
 
-// TestOverlayGeneratorVisitClip calls OverlayGenerator.VisitClip and
-// provides an Clip element, checking that the OverlayGenerator's String()
+// TestOverlayerVisitClip calls Overlayer.VisitClip and
+// provides an Clip element, checking that the Overlayer's String()
 // method returns the expected string representation.
-func TestOverlayGeneratorVisitClip(t *testing.T) {
+func TestOverlayerVisitClip(t *testing.T) {
 	tests := []struct {
 		name    string
 		clip    *content.Clip
-		visitor *content.OverlayGenerator
+		visitor *content.Overlayer
 		want    string
 	}{
 		{
-			name: "Overlay clip with background set in OverlayGenerator.",
+			name: "Overlay clip with background set in Overlayer.",
 			clip: &content.Clip{
 				Title:       "TestTitle",
 				Broadcaster: "TestBroadcaster",
 				Duration:    1.0,
 			},
-			visitor: &content.OverlayGenerator{
+			visitor: &content.Overlayer{
 				Background: "/path/to/Background.png",
 				Font:       "/path/to/Font.ttf",
 			},
@@ -105,16 +105,16 @@ func TestOverlayGeneratorVisitClip(t *testing.T) {
 	}
 }
 
-// TestOverlayGeneratorVisitMany calls multiple visit methods on
-// OverlayGenerator in sequence and checks that the resulting string returned by
+// TestOverlayerVisitMany calls multiple visit methods on
+// Overlayer in sequence and checks that the resulting string returned by
 // String() properly represents the visited element sequence.
-func TestOverlayGeneratorVisitMany(t *testing.T) {
+func TestOverlayerVisitMany(t *testing.T) {
 	tests := []struct {
 		name    string
 		intros  []*content.Intro
 		clips   []*content.Clip
 		outros  []*content.Outro
-		visitor *content.OverlayGenerator
+		visitor *content.Overlayer
 		want    string
 	}{
 		{
@@ -136,7 +136,7 @@ func TestOverlayGeneratorVisitMany(t *testing.T) {
 					Duration: 1.0,
 				},
 			},
-			visitor: &content.OverlayGenerator{
+			visitor: &content.Overlayer{
 				Background: "/path/to/Background.png",
 				Font:       "/path/to/Font.ttf",
 			},
@@ -164,7 +164,7 @@ func TestOverlayGeneratorVisitMany(t *testing.T) {
 				},
 			},
 			outros: []*content.Outro{},
-			visitor: &content.OverlayGenerator{
+			visitor: &content.Overlayer{
 				Background: "/path/to/Background.png",
 				Font:       "/path/to/Font.ttf",
 			},

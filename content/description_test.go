@@ -5,26 +5,26 @@ import (
 	"testing"
 )
 
-// TestDescriptionGeneratorVisitIntro calls DescriptionGenerator.VisitIntro and
-// provides an Intro element, checking that the DescriptionGenerator's String()
+// TestDescriberVisitIntro calls Describer.VisitIntro and
+// provides an Intro element, checking that the Describer's String()
 // method returns the expected string representation.
-func TestDescriptionGeneratorVisitIntro(t *testing.T) {
+func TestDescriberVisitIntro(t *testing.T) {
 	tests := []struct {
 		name    string
 		intro   *content.Intro
-		visitor *content.DescriptionGenerator
+		visitor *content.Describer
 		want    string
 	}{
 		{
 			name:    "Nominal description generation for intro.",
 			intro:   &content.Intro{Description: "Intro description."},
-			visitor: &content.DescriptionGenerator{},
+			visitor: &content.Describer{},
 			want:    "Intro description.",
 		},
 		{
 			name:    "No description.",
 			intro:   &content.Intro{},
-			visitor: &content.DescriptionGenerator{},
+			visitor: &content.Describer{},
 			want:    "",
 		},
 	}
@@ -36,26 +36,26 @@ func TestDescriptionGeneratorVisitIntro(t *testing.T) {
 	}
 }
 
-// TestDescriptionGeneratorVisitOutro calls DescriptionGenerator.VisitOutro and
-// provides an Outro element, checking that the DescriptionGenerator's String()
+// TestDescriberVisitOutro calls Describer.VisitOutro and
+// provides an Outro element, checking that the Describer's String()
 // method returns the expected string representation.
-func TestDescriptionGeneratorVisitOutro(t *testing.T) {
+func TestDescriberVisitOutro(t *testing.T) {
 	tests := []struct {
 		name    string
 		outro   *content.Outro
-		visitor *content.DescriptionGenerator
+		visitor *content.Describer
 		want    string
 	}{
 		{
 			name:    "Nominal description generation for outro.",
 			outro:   &content.Outro{Description: "Outro description."},
-			visitor: &content.DescriptionGenerator{},
+			visitor: &content.Describer{},
 			want:    "Outro description.",
 		},
 		{
 			name:    "No description.",
 			outro:   &content.Outro{},
-			visitor: &content.DescriptionGenerator{},
+			visitor: &content.Describer{},
 			want:    "",
 		},
 	}
@@ -67,14 +67,14 @@ func TestDescriptionGeneratorVisitOutro(t *testing.T) {
 	}
 }
 
-// TestDescriptionGeneratorVisitClip calls DescriptionGenerator.VisitClip and
-// provides an Clip element, checking that the DescriptionGenerator's String()
+// TestDescriberVisitClip calls Describer.VisitClip and
+// provides an Clip element, checking that the Describer's String()
 // method returns the expected string representation.
-func TestDescriptionGeneratorVisitClip(t *testing.T) {
+func TestDescriberVisitClip(t *testing.T) {
 	tests := []struct {
 		name    string
 		clip    *content.Clip
-		visitor *content.DescriptionGenerator
+		visitor *content.Describer
 		want    string
 	}{
 		{
@@ -85,13 +85,13 @@ func TestDescriptionGeneratorVisitClip(t *testing.T) {
 				Duration:    1.0,
 				Title:       "Test Title",
 			},
-			visitor: &content.DescriptionGenerator{},
+			visitor: &content.Describer{},
 			want:    "\n\n[0:00] 'Test Title'\nStreamed by TestBroadcaster at \nClipped by TestAuthor\n",
 		},
 		{
 			name:    "Empty clip.",
 			clip:    &content.Clip{},
-			visitor: &content.DescriptionGenerator{},
+			visitor: &content.Describer{},
 			want:    "",
 		},
 	}
@@ -103,16 +103,16 @@ func TestDescriptionGeneratorVisitClip(t *testing.T) {
 	}
 }
 
-// TestDescriptionGeneratorVisitMany calls multiple visit methods on
-// DescriptionGenerator in sequence and checks that the resulting string
+// TestDescriberVisitMany calls multiple visit methods on
+// Describer in sequence and checks that the resulting string
 // returned by String() properly represents the visited element sequence.
-func TestDescriptionGeneratorVisitMany(t *testing.T) {
+func TestDescriberVisitMany(t *testing.T) {
 	tests := []struct {
 		name    string
 		intros  []*content.Intro
 		clips   []*content.Clip
 		outros  []*content.Outro
-		visitor *content.DescriptionGenerator
+		visitor *content.Describer
 		want    string
 	}{
 		{
@@ -145,7 +145,7 @@ func TestDescriptionGeneratorVisitMany(t *testing.T) {
 					Duration:    3.0,
 				},
 			},
-			visitor: &content.DescriptionGenerator{},
+			visitor: &content.Describer{},
 			want: "Intro description." +
 				"\n\n[0:04] 'Test Title'\nStreamed by TestBroadcaster at \nClipped by TestAuthor\n" +
 				"\n\n[0:05] 'Test Twitch Title'\nStreamed by TestTwitchBroadcaster at https://twitch.tv/TestTwitchBroadcaster\nClipped by TestTwitchAuthor\n" +
