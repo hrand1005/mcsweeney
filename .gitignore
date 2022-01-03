@@ -15,7 +15,7 @@
 # vendor/
 
 *.yaml
-compile.txt
+*.txt
 
 client_secret.json
 *.mkv
