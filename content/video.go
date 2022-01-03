@@ -2,9 +2,7 @@ package content
 
 // Video represents a composite object with a slice of component interfaces
 type Video struct {
-	components  []Component
-	Description string
-	Path        string
+	components []Component
 }
 
 // Append implements the interface for Composite.Append(). It requires a component

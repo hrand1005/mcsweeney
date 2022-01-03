@@ -1,8 +1,16 @@
 package content
 
+type Payload struct {
+	Title       string
+	Path        string
+	Description string
+	Keywords    string
+	Privacy     string
+}
+
 // Sharer is defined by a method to share a component
 type Sharer interface {
-	Share(Video) error
+	Share(Payload) error
 }
 
 // NewSharer returns new sharer interface to the user to suit their platform.

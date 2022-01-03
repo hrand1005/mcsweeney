@@ -25,6 +25,11 @@ import (
 	"os/exec"
 )
 
+const (
+	CONCAT = "concat.mp4"
+	FINAL  = "final.mp4"
+)
+
 func main() {
 	// TODO: add command line parsing
 	c, err := config.LoadConfig(os.Args[1])
@@ -90,9 +95,7 @@ func main() {
 	fmt.Println("Number of tries: ", tries)
 
 	// create composite video object from clips
-	video := &content.Video{
-		Description: c.Destination.Description,
-	}
+	video := &content.Video{}
 
 	// append the clips to the video
 	for _, v := range clips {
@@ -124,7 +127,7 @@ func main() {
 	fmt.Printf("About to encode video components...")
 	video.Accept(encoder)
 
-	concatCmd := exec.Command("ffmpeg", "-f", "concat", "-safe", "0", "-i", "encoded.txt", "out.mp4")
+	concatCmd := exec.Command("ffmpeg", "-f", "concat", "-safe", "0", "-i", "encoded.txt", CONCAT)
 	fmt.Printf("About to concatenate video with ffmpeg command:\n%s\n", concatCmd)
 	concatCmd.Run()
 
@@ -137,8 +140,8 @@ func main() {
 	}
 	video.Accept(overlayer)
 
-	args := append(overlayer.Slice(), "final.mp4")
-	args = append([]string{"-i", "out.mp4"}, args...)
+	args := append([]string{"-i", CONCAT}, overlayer.Slice()...)
+	args = append(args, FINAL)
 	overlayCmd := exec.Command("ffmpeg", args...)
 	fmt.Println("Applying overlay")
 	err = overlayCmd.Run()
@@ -150,44 +153,33 @@ func main() {
 	video.Accept(describer)
 	fmt.Printf("Video's description:\n%s\n", describer)
 
-	/*
-		compiledVid, err := content.Concatenate(contentObjs, "compiled-vid.mp4")
+	shareIntf, err := content.NewSharer(c.Destination.Platform, c.Destination.Credentials)
+	if err != nil {
+		fmt.Println("Couldn't create content-sharer.")
+		log.Fatal(err)
+	}
+
+	// prepare payload to be shared
+	payload := content.Payload{
+		Title:       c.Destination.Title,
+		Path:        FINAL,
+		Description: c.Destination.Description + describer.String(), // prepends custom description from config file
+		Keywords:    c.Destination.Keywords,
+		Privacy:     string(c.Destination.Privacy),
+	}
+
+	err = shareIntf.Share(payload)
+	if err != nil {
+		fmt.Println("Couldn't share content.")
+		os.Remove(c.Destination.TokenCache)
+		fmt.Println("Retrying after clearing token cache...")
+		err = shareIntf.Share(payload)
 		if err != nil {
-			fmt.Println("Couldn't compile content.")
 			log.Fatal(err)
 		}
+	}
 
-		err = compiledVid.ApplyOverlay(contentObjs, c.Options.Overlay)
-		if err != nil {
-			fmt.Println("Couldn't apply overlay.")
-			log.Fatal(err)
-		}
-
-		shareIntf, err := content.NewSharer(c.Destination.Platform, c.Destination.Credentials)
-		if err != nil {
-			fmt.Println("Couldn't create content-sharer.")
-			log.Fatal(err)
-		}
-
-		// set final Content object's fields with config args
-		compiledVid.Title = c.Destination.Title
-		compiledVid.Description = c.Destination.Description + compiledVid.Description // appends the default credits description
-		compiledVid.Keywords = c.Destination.Keywords
-		compiledVid.Privacy = c.Destination.Privacy
-
-		err = shareIntf.Share(compiledVid)
-		if err != nil {
-			fmt.Println("Couldn't share content.")
-			os.Remove(c.Destination.TokenCache)
-			fmt.Println("Retrying after clearing token cache...")
-			err = shareIntf.Share(compiledVid)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-
-		fmt.Println("Content shared successfully!")
-	*/
+	fmt.Println("Content shared successfully!")
 
 	// TODO: table / data for uploaded videos that can be updated at a later
 	// time with analytics

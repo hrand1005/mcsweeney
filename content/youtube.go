@@ -5,7 +5,7 @@ import (
 	"google.golang.org/api/youtube/v3"
 	"net/http"
 	"os"
-	//"strings"
+	"strings"
 )
 
 type Privacy string
@@ -26,9 +26,9 @@ func NewYoutubeSharer(credentials string) (*YoutubeSharer, error) {
 	}, nil
 }
 
-func (y *YoutubeSharer) Share(v Video) error {
+func (y *YoutubeSharer) Share(p Payload) error {
 	//TODO: perform checks on the inputs
-	if v.Path == "" {
+	if p.Path == "" {
 		return fmt.Errorf("cannot upload nil file")
 	}
 	service, err := youtube.New(y.client)
@@ -38,22 +38,22 @@ func (y *YoutubeSharer) Share(v Video) error {
 
 	upload := &youtube.Video{
 		Snippet: &youtube.VideoSnippet{
-			//Title:       v.Title,
-			//Description: v.Description,
+			Title:       p.Title,
+			Description: p.Description,
 			//TODO: this might be nice :)
-			//CategoryId:  v.CategoryID,
-			//Tags: strings.Split(v.Keywords, ","),
+			//CategoryId:  p.CategoryID,
+			Tags: strings.Split(p.Keywords, ","),
 		},
-		//Status: &youtube.VideoStatus{PrivacyStatus: string(v.Privacy)},
+		Status: &youtube.VideoStatus{PrivacyStatus: string(p.Privacy)},
 	}
 
 	insertArgs := []string{"snippet", "status"}
 	call := service.Videos.Insert(insertArgs, upload)
 
-	file, err := os.Open(v.Path)
+	file, err := os.Open(p.Path)
 	defer file.Close()
 	if err != nil {
-		return fmt.Errorf("Couldn't open file: %s, %v", v.Path, err)
+		return fmt.Errorf("Couldn't open file: %s, %v", p.Path, err)
 	}
 
 	response, err := call.Media(file).Do()
@@ -61,7 +61,7 @@ func (y *YoutubeSharer) Share(v Video) error {
 		return fmt.Errorf("Couldn't upload file: %v", err)
 	}
 
-	fmt.Printf("%s uploaded successfully!", v.Path)
+	fmt.Printf("%s uploaded successfully!", p.Path)
 	fmt.Println("Response: ", response)
 
 	return nil
