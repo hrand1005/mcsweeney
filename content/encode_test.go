@@ -198,3 +198,71 @@ func TestEncoderVisitClip(t *testing.T) {
 	}
 	os.Remove(EncoderPath)
 }
+
+func TestEncoderVisitMany(t *testing.T) {
+	tests := []struct {
+		name    string
+		intros  []*content.Intro
+		clips   []*content.Clip
+		outros  []*content.Outro
+		visitor *content.Encoder
+		want    string
+		wantErr error
+	}{
+		{
+			name: "Encode one intro, three clips, and an outro.",
+			intros: []*content.Intro{
+				&content.Intro{Path: "fakes/intro.mp4"},
+			},
+			clips: []*content.Clip{
+				&content.Clip{Path: "fakes/clip.mp4"},
+				&content.Clip{Path: "fakes/clip2.mp4"},
+				&content.Clip{Path: "fakes/clip3.mp4"},
+			},
+			outros: []*content.Outro{
+				&content.Outro{Path: "fakes/outro.mp4"},
+			},
+			visitor: &content.Encoder{Path: EncoderPath},
+			want: "file '0.mkv'\n" +
+				"file '1.mkv'\n" +
+				"file '2.mkv'\n" +
+				"file '3.mkv'\n" +
+				"file '4.mkv'\n",
+			wantErr: nil,
+		},
+	}
+	for _, tc := range tests {
+		// visit all elements
+		for _, intro := range tc.intros {
+			tc.visitor.VisitIntro(intro)
+		}
+		for _, clip := range tc.clips {
+			tc.visitor.VisitClip(clip)
+		}
+		for _, outro := range tc.outros {
+			tc.visitor.VisitOutro(outro)
+		}
+
+		// read file contents
+		gotBytes, err := os.ReadFile(tc.visitor.Path)
+		if err != nil {
+			if errors.Is(err, tc.wantErr) {
+				break
+			}
+			os.Remove(tc.visitor.Path)
+			t.Fatalf("Error opening file: %v", err)
+		}
+
+		// convert bytes to string for comparison
+		got := string(gotBytes)
+
+		// check for correct file contents
+		if got != tc.want {
+			os.Remove(tc.visitor.Path)
+			t.Fatalf("Got: %s\nWanted: %s", got, tc.want)
+		}
+		os.Remove(tc.visitor.Path)
+	}
+	os.Remove(EncoderPath)
+
+}
