@@ -164,6 +164,7 @@ func main() {
 		Title:       c.Destination.Title,
 		Path:        FINAL,
 		Description: c.Destination.Description + describer.String(), // prepends custom description from config file
+		CategoryID:  c.Destination.CategoryID,
 		Keywords:    c.Destination.Keywords,
 		Privacy:     string(c.Destination.Privacy),
 	}

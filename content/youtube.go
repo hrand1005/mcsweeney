@@ -41,8 +41,8 @@ func (y *YoutubeSharer) Share(p Payload) error {
 			Title:       p.Title,
 			Description: p.Description,
 			//TODO: this might be nice :)
-			//CategoryId:  p.CategoryID,
-			Tags: strings.Split(p.Keywords, ","),
+			CategoryId: p.CategoryID,
+			Tags:       strings.Split(p.Keywords, ","),
 		},
 		Status: &youtube.VideoStatus{PrivacyStatus: string(p.Privacy)},
 	}

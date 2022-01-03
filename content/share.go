@@ -4,6 +4,7 @@ type Payload struct {
 	Title       string
 	Path        string
 	Description string
+	CategoryID  string
 	Keywords    string
 	Privacy     string
 }

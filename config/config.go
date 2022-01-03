@@ -39,7 +39,7 @@ type Source struct {
 
 // Contains query arguments to be used to gather content
 type Query struct {
-	GameID string `yaml:"gameID"`
+	GameID string `yaml:"game-id"`
 	First  int    `yaml:"first"`
 	Days   int    `yaml:"days"`
 }
@@ -56,7 +56,7 @@ type Destination struct {
 	Credentials string           `yaml:"credentials"`
 	Title       string           `yaml:"title"`
 	Description string           `yaml:"description"`
-	Category    string           `yaml:"category"`
+	CategoryID  string           `yaml:"category-id"`
 	Keywords    string           `yaml:"keywords"`
 	Privacy     content.Privacy  `yaml:"privacy"`
 	TokenCache  string           `yaml:"token-cache"`
