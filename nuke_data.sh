@@ -1,5 +1,6 @@
 #!/bin/bash
-# this script should nuke downloaded clips as well as the .db files that manage them
+# this script removes temporary files plus .db files, intended to be called
+# manually
 rm tmp/*
 rm *.db
 rm *.mp4
