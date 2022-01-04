@@ -20,8 +20,10 @@ type Config struct {
 
 // Contains intro information for prepended content
 type Intro struct {
-	Path     string  `yaml:"path"`
-	Duration float64 `yaml:"duration"`
+	Path         string  `yaml:"path"`
+	Duration     float64 `yaml:"duration"`
+	OverlayStart float64 `yaml:"overlay-start"`
+	Font         string  `yaml:"font"`
 }
 
 // Contains outro information for prepended content

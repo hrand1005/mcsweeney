@@ -69,12 +69,12 @@ func (e *Encoder) writeToListfile(s string) {
 }
 
 const (
-	ffmpegEncoder string = "libx264"
-	ffmpegPreset  string = "slow"
+	//ffmpegEncoder string = "libx264"
+	ffmpegPreset string = "slow"
 )
 
 func encode(infile string, outfile string) {
-	cmd := exec.Command("ffmpeg", "-i", infile, "-c:v", ffmpegEncoder, "-preset", ffmpegPreset, "-crf", "22", "-c:a", "copy", outfile)
+	cmd := exec.Command("ffmpeg", "-i", infile, "-preset", ffmpegPreset, "-crf", "10", "-c:a", "copy", outfile)
 	fmt.Printf("About to encode...\n%s\n", cmd.String())
 	cmd.Run()
 }

@@ -40,7 +40,7 @@ const (
 	YPosition       int     = 500
 	// define constants specific to the text overlay and fade
 	FontColor string  = "ffffff"
-	FontSize  int     = 26
+	FontSize  int     = 52
 	TextFade  float64 = 0.5
 	TextDelay float64 = 0.5
 )
@@ -83,13 +83,14 @@ func (o *Overlayer) Slice() []string {
 func (o *Overlayer) createOverlayBackground(c *Clip) string {
 	// determine the length of the overlay's background, multiply by arbitrary
 	// size coefficient (16), plus x offset to create margins for text
-	bgLen := float64(max(len(c.Title), len(c.Broadcaster)))*16.0 + 3.5*float64(XPosition)
+	bgLen := float64(max(len(c.Title), len(c.Broadcaster)))*32.0 + 3.5*float64(XPosition)
 
 	// determine the duration of the background's slide animation
 	sDur := bgLen / SlideSpeed
 
 	// generate strings to animate the background x and y position over time
-	yString := fmt.Sprintf(`y=%v`, YPosition-30)
+	//yString := fmt.Sprintf(`y=%v`, YPosition-30)
+	yString := `y=(H-h)/2`
 	xString := fmt.Sprintf(`x='if(lt(t,%f),NAN,if(lt(t,%f),-w+(t-%f)*%f,if(lt(t,%f),-w+%f,-w+%f-(t-%f)*%f)))'`, o.cursor, o.cursor+sDur, o.cursor, SlideSpeed, o.cursor+sDur+OverlayDuration, bgLen, bgLen, o.cursor+sDur+OverlayDuration, SlideSpeed)
 
 	return fmt.Sprintf(`overlay=%s:%s,`, xString, yString)
@@ -104,7 +105,8 @@ func (o *Overlayer) createOverlayText(c *Clip) string {
 	// generate string to fade text in over background with a delay
 	fadeString := fmt.Sprintf(`alpha='if(lt(t,%f),0,if(lt(t,%f),(t-%f)/1,if(lt(t,%f),1,if(lt(t,%f),(1-(t-%f))/1,0))))'`, o.cursor+TextDelay, o.cursor+TextDelay+TextFade, o.cursor+TextDelay, o.cursor+OverlayDuration-TextDelay, o.cursor+OverlayDuration-TextDelay+TextFade, o.cursor+OverlayDuration-TextDelay)
 	xString := fmt.Sprintf(`x=%v`, XPosition)
-	yString := fmt.Sprintf(`y=%v`, YPosition)
+	//yString := fmt.Sprintf(`y=%v`, YPosition)
+	yString := `y=(h-text_h)/2`
 
 	return fmt.Sprintf(`%s:%s:%s:%s:%s:%s:%s`, fontString, textString, sizeString, colorString, fadeString, xString, yString)
 }

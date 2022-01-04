@@ -23,11 +23,14 @@ import (
 	"mcsweeney/db"
 	"os"
 	"os/exec"
+	"strings"
+	"time"
 )
 
 const (
-	CONCAT = "concat.mp4"
-	FINAL  = "final.mp4"
+	CONCAT  = "concat.mp4"
+	OVERLAY = "intermediate.mp4"
+	FINAL   = "final.mp4"
 )
 
 func main() {
@@ -129,7 +132,11 @@ func main() {
 
 	concatCmd := exec.Command("ffmpeg", "-f", "concat", "-safe", "0", "-i", "encoded.txt", CONCAT)
 	fmt.Printf("About to concatenate video with ffmpeg command:\n%s\n", concatCmd)
-	concatCmd.Run()
+	err = concatCmd.Run()
+	if err != nil {
+		fmt.Printf("Couldn't concatenate videos\nCommand string\n%s\n", concatCmd)
+		log.Fatal(err)
+	}
 
 	fmt.Printf("Background: %s\n", c.Options.Overlay.Background)
 	fmt.Printf("Font: %s\n", c.Options.Overlay.Font)
@@ -141,12 +148,34 @@ func main() {
 	video.Accept(overlayer)
 
 	args := append([]string{"-i", CONCAT}, overlayer.Slice()...)
-	args = append(args, FINAL)
+	args = append(args, OVERLAY)
 	overlayCmd := exec.Command("ffmpeg", args...)
 	fmt.Println("Applying overlay")
 	err = overlayCmd.Run()
 	if err != nil {
-		fmt.Printf("Couldn't apply overlay\nCommand string\n%s\nErr:\n%v", overlayCmd, err)
+		fmt.Printf("Couldn't apply overlay\nCommand string\n%s\n", overlayCmd)
+		log.Fatal(err)
+	}
+
+	// apply generic overlay for video
+	const prettyDateFull = "January 2, 2006"
+	now := time.Now()
+	last := now.AddDate(0, 0, -7)
+	nowFormatted := now.Format(prettyDateFull)
+	lastFormatted := strings.Split(last.Format(prettyDateFull), ",")[0]
+
+	timeRange := lastFormatted + " - " + nowFormatted
+	fmt.Printf("Range: %s\n", timeRange)
+
+	genericText := strings.ReplaceAll(timeRange, `,`, `\\\,`)
+	//genericText = strings.ReplaceAll(timeRange, `-`, `\\\-`)
+
+	drawtext := fmt.Sprintf("drawtext=enable='between(t,%f,%f)':fontfile=%s:text=%s:fontsize=112:fontcolor=ffffff:x=(w-text_w)/2:y=(h-text_h)/2", c.Intro.OverlayStart, c.Intro.Duration, c.Intro.Font, genericText)
+	genericOverlayCmd := exec.Command("ffmpeg", "-i", OVERLAY, "-vf", drawtext, "-acodec", "copy", FINAL)
+	err = genericOverlayCmd.Run()
+	if err != nil {
+		fmt.Printf("Couldn't apply generic overlay\nCommand string\n%s\n", genericOverlayCmd)
+		log.Fatal(err)
 	}
 
 	describer := &content.Describer{}
