@@ -39,7 +39,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	dbIntf, err := db.New(c.Name)
+	dbIntf, err := db.New(c.Name + ".db")
 	if err != nil {
 		fmt.Println("Couldn't create content-db.")
 		log.Fatal(err)
