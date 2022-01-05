@@ -2,17 +2,8 @@ package main
 
 /* TODO:
 - Consistent error handling
-- Testing
-- Architecture
-    - Think about params, pointers, interfaces, etc.
+- logging
 - Goroutines
-- Decide on a standard for where to use pointers vs struct values
-- Url or URL, not both
-- Content obj methods? Or limit info passed around?
-- Encode videos consistently
-- Take data streams and do things with them for faster editing?
-- content should not rely on how config happens to be implemented
-    - content should be functional as a standalone package
 */
 
 import (
@@ -28,23 +19,27 @@ import (
 )
 
 const (
-	CONCAT = "concat.mp4"
-	FINAL  = "final.mp4"
+	CONCAT  = "concat.mp4"
+	FINAL   = "final.mp4"
+	ENCODED = "encoded.txt"
 )
 
 func main() {
+	// load configs from command line arg
 	c, err := config.LoadConfig(os.Args[1])
 	if err != nil {
 		fmt.Println("Couldn't load config.")
 		log.Fatal(err)
 	}
 
+	// init db
 	dbIntf, err := db.New(c.Name + ".db")
 	if err != nil {
 		fmt.Println("Couldn't create content-db.")
 		log.Fatal(err)
 	}
 
+	// init getter
 	query := content.Query(c.Source.Query)
 	getIntf, err := content.NewGetter(c.Source.Platform, c.Source.Credentials, query)
 	if err != nil {
@@ -52,6 +47,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// get new clips with a retry strategy
 	tries := 0
 	clips := make([]*content.Clip, 0, c.Source.Query.First+2)
 	for len(clips) < c.Source.Query.First {
@@ -76,14 +72,9 @@ func main() {
 			if !exists && len(clips) < c.Source.Query.First {
 				valid := Filter(v, c.Filters)
 				if valid {
-					// Log this...
 					clips = append(clips, v)
 				}
 			}
-			// Log this...
-			/*else {
-			    fmt.Printf("Content exists: %s\n", v.Url)
-			}*/
 		}
 	}
 
@@ -91,7 +82,6 @@ func main() {
 		fmt.Println("Unable to find new content.\nExiting...")
 		return
 	}
-	// Log this...
 	fmt.Printf("Was able to retrieve %v content objects.\n", len(clips))
 	fmt.Println("Number of tries: ", tries)
 
@@ -124,32 +114,33 @@ func main() {
 	// clean up existing files
 	removeTempFiles()
 
-	encoder := &content.Encoder{Path: "encoded.txt"}
+	// create encoder, encode video components
+	encoder := &content.Encoder{ListFile: ENCODED}
 	fmt.Printf("About to encode video components...")
 	video.Accept(encoder)
 
-	concatCmd := exec.Command("ffmpeg", "-f", "concat", "-safe", "0", "-i", "encoded.txt", CONCAT)
-	fmt.Printf("About to concatenate video with ffmpeg command:\n%s\n", concatCmd)
+	// concatenate encoded components into one mp4 file
+	concatCmd := exec.Command("ffmpeg", "-f", "concat", "-safe", "0", "-i", ENCODED, CONCAT)
 	err = concatCmd.Run()
 	if err != nil {
 		fmt.Printf("Couldn't concatenate videos\nCommand string\n%s\n", concatCmd)
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Background: %s\n", c.Options.Overlay.Background)
-	fmt.Printf("Font: %s\n", c.Options.Overlay.Font)
-
+	// create video overlay
 	overlayer := &content.Overlayer{
 		Font:       c.Options.Overlay.Font,
 		Background: c.Options.Overlay.Background,
 	}
 	video.Accept(overlayer)
 
+	// apply overlay with dateOverlay
 	args := append([]string{"-i", CONCAT}, overlayer.Slice()...)
 	dateOverlay := DateOverlay(c.Intro, c.Source.Query.Days)
 	args[len(args)-1] = args[len(args)-1] + "," + dateOverlay
 	args = append(args, FINAL)
 	overlayCmd := exec.Command("ffmpeg", args...)
+
 	fmt.Println("Applying overlay")
 	err = overlayCmd.Run()
 	if err != nil {
@@ -157,6 +148,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// generate description for video
 	describer := &content.Describer{}
 	video.Accept(describer)
 	fmt.Printf("Video's description:\n%s\n", describer)
@@ -177,6 +169,7 @@ func main() {
 		Privacy:     string(c.Destination.Privacy),
 	}
 
+	// share payload, check that the token cache hasn't expired
 	err = shareIntf.Share(payload)
 	if err != nil {
 		fmt.Println("Couldn't share content.")
@@ -187,11 +180,9 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-
 	fmt.Println("Content shared successfully!")
 
-	// TODO: table / data for uploaded videos that can be updated at a later
-	// time with analytics
+	// insert data for retrieved components to db
 	for _, v := range clips {
 		err := dbIntf.Insert(v)
 		if err != nil {
@@ -203,9 +194,7 @@ func main() {
 	return
 }
 
-// DateOverlay creates an overlay for the dates covered by this routine,
-// intended to appear in the intro portion of the video.
-func DateOverlay(i config.Intro, days int) string {
+func dateOverlay(i config.Intro, days int) string {
 	const prettyDateFull = "January 2, 2006"
 	now := time.Now()
 	last := now.AddDate(0, 0, -1*days)
@@ -220,10 +209,7 @@ func DateOverlay(i config.Intro, days int) string {
 	return fmt.Sprintf("drawtext=enable='between(t,%f,%f)':fontfile=%s:text=%s:fontsize=112:fontcolor=ffffff:x=(w-text_w)/2:y=(h-text_h)/2", i.OverlayStart, i.Duration, i.Font, escapeText)
 }
 
-// Filter checks whether the given content object passes all filters. If
-// yes, returns true, else false
-func Filter(c *content.Clip, f config.Filters) bool {
-	//TODO: find a way to iterate through all filters
+func filter(c *content.Clip, f config.Filters) bool {
 	for _, v := range f.Blacklist {
 		if c.Broadcaster == v {
 			return false
@@ -237,14 +223,3 @@ func removeTempFiles() {
 	cmd := exec.Command("/bin/sh", "./cleanup.sh")
 	cmd.Run()
 }
-
-// Consider this in the final version
-/*
-func main(){
-    var get, edit, share
-
-    // parse command line flags
-    if -g then get = getContent(); etc.
-    eachStrategy(get, edit, share)
-}
-*/
