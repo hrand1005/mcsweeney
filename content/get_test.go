@@ -38,7 +38,7 @@ func TestNewGetter(t *testing.T) {
 				query:       content.Query{},
 			},
 			wantType: nil,
-			wantErr:  content.PlatformNotFound,
+			wantErr:  content.ErrPlatformNotFound,
 		},
 	}
 	for _, tc := range tests {

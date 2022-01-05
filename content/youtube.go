@@ -1,7 +1,6 @@
 package content
 
 import (
-	"fmt"
 	"google.golang.org/api/youtube/v3"
 	"net/http"
 	"os"
@@ -15,10 +14,14 @@ const (
 	PUBLIC  Privacy = "public"
 )
 
+// YoutubeSharer maintains client info for sharing new content via the youtube
+// api.
 type YoutubeSharer struct {
 	client *http.Client
 }
 
+// NewYoutubeSharer constructs a new YoutubeSharer using a credentials json file
+// that can be created using the google developer console.
 func NewYoutubeSharer(credentials string) (*YoutubeSharer, error) {
 	client := GetClient(credentials, youtube.YoutubeUploadScope)
 	return &YoutubeSharer{
@@ -26,43 +29,35 @@ func NewYoutubeSharer(credentials string) (*YoutubeSharer, error) {
 	}, nil
 }
 
-func (y *YoutubeSharer) Share(p Payload) error {
-	//TODO: perform checks on the inputs
+// Share implements the sharer interface for YoutubeSharer. It shares a payload
+// to the channel corresponding to the YoutubeSharer's credentials.
+func (y *YoutubeSharer) Share(p Payload) (int, error) {
 	if p.Path == "" {
-		return fmt.Errorf("cannot upload nil file")
+		return 0, ErrEmptyPath
 	}
 	service, err := youtube.New(y.client)
 	if err != nil {
-		return fmt.Errorf("Couldn't create youtube service: %v", err)
+		return 0, err
 	}
-
+	// initialize a youtube object for upload conforming to the youtube api
 	upload := &youtube.Video{
 		Snippet: &youtube.VideoSnippet{
 			Title:       p.Title,
 			Description: p.Description,
-			//TODO: this might be nice :)
-			CategoryId: p.CategoryID,
-			Tags:       strings.Split(p.Keywords, ","),
+			CategoryId:  p.CategoryID,
+			Tags:        strings.Split(p.Keywords, ","),
 		},
 		Status: &youtube.VideoStatus{PrivacyStatus: string(p.Privacy)},
 	}
-
 	insertArgs := []string{"snippet", "status"}
 	call := service.Videos.Insert(insertArgs, upload)
 
 	file, err := os.Open(p.Path)
 	defer file.Close()
 	if err != nil {
-		return fmt.Errorf("Couldn't open file: %s, %v", p.Path, err)
+		return 0, err
 	}
+	r, err := call.Media(file).Do()
 
-	response, err := call.Media(file).Do()
-	if err != nil {
-		return fmt.Errorf("Couldn't upload file: %v", err)
-	}
-
-	fmt.Printf("%s uploaded successfully!", p.Path)
-	fmt.Println("Response: ", response)
-
-	return nil
+	return r.ServerResponse.HTTPStatusCode, err
 }

@@ -14,6 +14,6 @@ func NewGetter(platform Platform, credentials string, query Query) (Getter, erro
 	case TWITCH:
 		return NewTwitchGetter(credentials, query)
 	default:
-		return nil, PlatformNotFound
+		return nil, ErrPlatformNotFound
 	}
 }

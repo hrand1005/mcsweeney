@@ -19,11 +19,10 @@ func (d *Describer) String() string {
 
 // VisitClip implements the visitor interface for Describer. Appends
 // a formatted timestamp, title, broadcaster, and author of the clip.
-func (d *Describer) VisitClip(c *Clip) {
+func (d *Describer) VisitClip(c *Clip) error {
 	// if the clip has no duration, do nothing with it
-	// TODO: raise error flag in Describer
 	if c.Duration == 0.0 {
-		return
+		return ErrNoDuration
 	}
 	// generate simple timestamp up to 59:59
 	minutes := int(d.cursor) / 60
@@ -34,24 +33,25 @@ func (d *Describer) VisitClip(c *Clip) {
 	} else {
 		timestamp = fmt.Sprintf("[%v:%v]", minutes, seconds)
 	}
-
+	// concatenate description, increment cursor
 	d.description += fmt.Sprintf("\n\n%s '%s'\nStreamed by %s at %s\nClipped by %s\n", timestamp, c.Title, c.Broadcaster, c.Channel(), c.Author)
 	d.cursor += c.Duration
-	return
+
+	return nil
 }
 
 // VisitIntro implements the visitor interface for Describer. Appends
 // a faithful duplicate of the intro's description field.
-func (d *Describer) VisitIntro(i *Intro) {
+func (d *Describer) VisitIntro(i *Intro) error {
 	d.description += i.Description
 	d.cursor += i.Duration
-	return
+	return nil
 }
 
 // VisitOutro implements the visitor interface for Describer. Appends
 // a faithful duplicate of the outro's description field.
-func (d *Describer) VisitOutro(o *Outro) {
+func (d *Describer) VisitOutro(o *Outro) error {
 	d.description += o.Description
 	d.cursor += o.Duration
-	return
+	return nil
 }

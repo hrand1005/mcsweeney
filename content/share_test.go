@@ -35,7 +35,7 @@ func TestNewSharer(t *testing.T) {
 				platform:    content.Platform("Not Found"),
 			},
 			wantType: nil,
-			wantErr:  content.PlatformNotFound,
+			wantErr:  content.ErrPlatformNotFound,
 		},
 	}
 	for _, tc := range tests {

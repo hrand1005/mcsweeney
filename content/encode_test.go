@@ -13,6 +13,24 @@ const (
 	EncoderPath string = "encoded.txt"
 )
 
+// TestEncoderPath calls encoder's visit methods without initializing a Path in
+// the Encoder, checking that the appropriate error is returned.
+func TestEncoderEmpty(t *testing.T) {
+	encoder := &content.Encoder{}
+	err := encoder.VisitIntro(&content.Intro{})
+	if err != content.ErrEmptyPath {
+		t.Fatalf("Got: %s, Wanted: %s\n", err, content.ErrEmptyPath)
+	}
+	err = encoder.VisitClip(&content.Clip{})
+	if err != content.ErrEmptyPath {
+		t.Fatalf("Got: %s, Wanted: %s\n", err, content.ErrEmptyPath)
+	}
+	err = encoder.VisitOutro(&content.Outro{})
+	if err != content.ErrEmptyPath {
+		t.Fatalf("Got: %s, Wanted: %s\n", err, content.ErrEmptyPath)
+	}
+}
+
 // TestEncoderVisitIntro calls Encoder.VisitIntro and provides an Intro element,
 // checking that the outfile is written to the file returned by Path, and that
 // the contents of the file are correct.
@@ -199,6 +217,9 @@ func TestEncoderVisitClip(t *testing.T) {
 	os.Remove(EncoderPath)
 }
 
+// TestEncoderVisitMany calls a multiple visits in sequence an providing various
+// components, checking that the outfile is written to the file returned by Path,
+// and that the contents of the file are correct.
 func TestEncoderVisitMany(t *testing.T) {
 	tests := []struct {
 		name    string

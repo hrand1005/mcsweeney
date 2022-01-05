@@ -22,7 +22,6 @@ func (c *Clip) Channel() string {
 }
 
 // Accept implements the component interface for Clip.
-func (c *Clip) Accept(v Visitor) {
-	v.VisitClip(c)
-	return
+func (c *Clip) Accept(v Visitor) error {
+	return v.VisitClip(c)
 }

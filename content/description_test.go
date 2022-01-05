@@ -14,24 +14,27 @@ func TestDescriberVisitIntro(t *testing.T) {
 		intro   *content.Intro
 		visitor *content.Describer
 		want    string
+		wantErr error
 	}{
 		{
 			name:    "Nominal description generation for intro.",
 			intro:   &content.Intro{Description: "Intro description."},
 			visitor: &content.Describer{},
 			want:    "Intro description.",
+			wantErr: nil,
 		},
 		{
 			name:    "No description.",
 			intro:   &content.Intro{},
 			visitor: &content.Describer{},
 			want:    "",
+			wantErr: nil,
 		},
 	}
 	for _, tc := range tests {
-		tc.visitor.VisitIntro(tc.intro)
-		if tc.visitor.String() != tc.want {
-			t.Fatalf("Got: %s\nWanted: %s", tc.visitor.String(), tc.want)
+		gotErr := tc.visitor.VisitIntro(tc.intro)
+		if tc.visitor.String() != tc.want || gotErr != tc.wantErr {
+			t.Fatalf("Got: %s\nWanted: %s\nGotErr: %s, WantErr: %s", tc.visitor, tc.want, gotErr, tc.wantErr)
 		}
 	}
 }
@@ -45,24 +48,27 @@ func TestDescriberVisitOutro(t *testing.T) {
 		outro   *content.Outro
 		visitor *content.Describer
 		want    string
+		wantErr error
 	}{
 		{
 			name:    "Nominal description generation for outro.",
 			outro:   &content.Outro{Description: "Outro description."},
 			visitor: &content.Describer{},
 			want:    "Outro description.",
+			wantErr: nil,
 		},
 		{
 			name:    "No description.",
 			outro:   &content.Outro{},
 			visitor: &content.Describer{},
 			want:    "",
+			wantErr: nil,
 		},
 	}
 	for _, tc := range tests {
-		tc.visitor.VisitOutro(tc.outro)
-		if tc.visitor.String() != tc.want {
-			t.Fatalf("Got: %s\nWanted: %s", tc.visitor.String(), tc.want)
+		gotErr := tc.visitor.VisitOutro(tc.outro)
+		if tc.visitor.String() != tc.want || gotErr != tc.wantErr {
+			t.Fatalf("Got: %s\nWanted: %s\nGotErr: %s, WantErr: %s", tc.visitor, tc.want, gotErr, tc.wantErr)
 		}
 	}
 }
@@ -76,6 +82,7 @@ func TestDescriberVisitClip(t *testing.T) {
 		clip    *content.Clip
 		visitor *content.Describer
 		want    string
+		wantErr error
 	}{
 		{
 			name: "Nominal description generation for single clip.",
@@ -87,18 +94,20 @@ func TestDescriberVisitClip(t *testing.T) {
 			},
 			visitor: &content.Describer{},
 			want:    "\n\n[0:00] 'Test Title'\nStreamed by TestBroadcaster at \nClipped by TestAuthor\n",
+			wantErr: nil,
 		},
 		{
-			name:    "Empty clip.",
+			name:    "Empty clip returns ErrNoDuration.",
 			clip:    &content.Clip{},
 			visitor: &content.Describer{},
 			want:    "",
+			wantErr: content.ErrNoDuration,
 		},
 	}
 	for _, tc := range tests {
-		tc.visitor.VisitClip(tc.clip)
-		if tc.visitor.String() != tc.want {
-			t.Fatalf("Got: %s\nWanted: %s", tc.visitor.String(), tc.want)
+		gotErr := tc.visitor.VisitClip(tc.clip)
+		if tc.visitor.String() != tc.want || gotErr != tc.wantErr {
+			t.Fatalf("Got: %s\nWanted: %s\nGotErr: %s, WantErr: %s", tc.visitor, tc.want, gotErr, tc.wantErr)
 		}
 	}
 }
@@ -114,6 +123,7 @@ func TestDescriberVisitMany(t *testing.T) {
 		outros  []*content.Outro
 		visitor *content.Describer
 		want    string
+		wantErr error
 	}{
 		{
 			name: "Description generation for Intro, three clips, and outro.",
@@ -130,7 +140,12 @@ func TestDescriberVisitMany(t *testing.T) {
 					Duration:    1.0,
 					Title:       "Test Title",
 				},
-				&content.Clip{},
+				&content.Clip{
+					Author:      "TestAuthor2",
+					Broadcaster: "TestBroadcaster2",
+					Duration:    0.5,
+					Title:       "Test Title 2",
+				},
 				&content.Clip{
 					Author:      "TestTwitchAuthor",
 					Broadcaster: "TestTwitchBroadcaster",
@@ -148,20 +163,31 @@ func TestDescriberVisitMany(t *testing.T) {
 			visitor: &content.Describer{},
 			want: "Intro description." +
 				"\n\n[0:04] 'Test Title'\nStreamed by TestBroadcaster at \nClipped by TestAuthor\n" +
+				"\n\n[0:05] 'Test Title 2'\nStreamed by TestBroadcaster2 at \nClipped by TestAuthor2\n" +
 				"\n\n[0:05] 'Test Twitch Title'\nStreamed by TestTwitchBroadcaster at https://twitch.tv/TestTwitchBroadcaster\nClipped by TestTwitchAuthor\n" +
 				"Outro description.",
+			wantErr: nil,
 		},
 	}
 	for _, tc := range tests {
 		// visit all elements
 		for _, intro := range tc.intros {
-			tc.visitor.VisitIntro(intro)
+			gotErr := tc.visitor.VisitIntro(intro)
+			if gotErr != tc.wantErr {
+				t.Fatalf("GotErr: %s\nWantErr: %s\n", gotErr, tc.wantErr)
+			}
 		}
 		for _, clip := range tc.clips {
-			tc.visitor.VisitClip(clip)
+			gotErr := tc.visitor.VisitClip(clip)
+			if gotErr != tc.wantErr {
+				t.Fatalf("GotErr: %s\nWantErr: %s\n", gotErr, tc.wantErr)
+			}
 		}
 		for _, outro := range tc.outros {
-			tc.visitor.VisitOutro(outro)
+			gotErr := tc.visitor.VisitOutro(outro)
+			if gotErr != tc.wantErr {
+				t.Fatalf("GotErr: %s\nWantErr: %s\n", gotErr, tc.wantErr)
+			}
 		}
 		if tc.visitor.String() != tc.want {
 			t.Fatalf("Got: %s\nWanted: %s", tc.visitor.String(), tc.want)

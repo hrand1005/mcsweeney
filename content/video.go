@@ -21,8 +21,12 @@ func (v *Video) Prepend(c Component) error {
 
 // Accept implements the component interface for Video. It calls accept on its
 // child components.
-func (v *Video) Accept(t Visitor) {
+func (v *Video) Accept(t Visitor) error {
 	for _, c := range v.components {
-		c.Accept(t)
+		err := c.Accept(t)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }

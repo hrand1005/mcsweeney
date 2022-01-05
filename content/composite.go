@@ -8,5 +8,5 @@ type Composite interface {
 
 // Component is defined by an interface for accepting visitors
 type Component interface {
-	Accept(Visitor)
+	Accept(Visitor) error
 }

@@ -8,7 +8,6 @@ type Intro struct {
 }
 
 // Accept implements the component interface for Intro.
-func (i *Intro) Accept(v Visitor) {
-	v.VisitIntro(i)
-	return
+func (i *Intro) Accept(v Visitor) error {
+	return v.VisitIntro(i)
 }

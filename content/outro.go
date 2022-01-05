@@ -8,7 +8,6 @@ type Outro struct {
 }
 
 // Accept implements the component interface for Outro.
-func (o *Outro) Accept(v Visitor) {
-	v.VisitOutro(o)
-	return
+func (o *Outro) Accept(v Visitor) error {
+	return v.VisitOutro(o)
 }

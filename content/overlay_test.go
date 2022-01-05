@@ -8,16 +8,13 @@ import (
 // TestOverlayerVisitIntro calls Overlayer.VisitIntro and
 // provides an Intro element, checking that the Overlayer's String()
 // method returns the expected string representation.
-// TODO: Decide what overlays should be generated for intros
-// Currently VisitIntro does not change Overlayer's string
-// representation. However, it should still have effects on Overlayer's
-// internal state, such as incrementing the Overlayer's internal cursor.
 func TestOverlayerVisitIntro(t *testing.T) {
 	tests := []struct {
 		name    string
 		intro   *content.Intro
 		visitor *content.Overlayer
 		want    string
+		wantErr error
 	}{
 		{
 			name: "Nominal overlay for intro, empty string.",
@@ -26,6 +23,7 @@ func TestOverlayerVisitIntro(t *testing.T) {
 			},
 			visitor: &content.Overlayer{},
 			want:    "",
+			wantErr: nil,
 		},
 	}
 	for _, tc := range tests {
@@ -39,16 +37,13 @@ func TestOverlayerVisitIntro(t *testing.T) {
 // TestOverlayerVisitOutro calls Overlayer.VisitOutro and
 // provides an Outro element, checking that the Overlayer's String()
 // method returns the expected string representation.
-// TODO: Decide what overlays should be generated for intros
-// Currently VisitIntro does not change Overlayer's string
-// representation. However, it should still have effects on Overlayer's
-// internal state, such as incrementing the Overlayer's internal cursor.
 func TestOverlayerVisitOutro(t *testing.T) {
 	tests := []struct {
 		name    string
 		outro   *content.Outro
 		visitor *content.Overlayer
 		want    string
+		wantErr error
 	}{
 		{
 			name: "Nominal overlay for outro, empty string.",
@@ -57,12 +52,13 @@ func TestOverlayerVisitOutro(t *testing.T) {
 			},
 			visitor: &content.Overlayer{},
 			want:    "",
+			wantErr: nil,
 		},
 	}
 	for _, tc := range tests {
-		tc.visitor.VisitOutro(tc.outro)
-		if tc.visitor.String() != tc.want {
-			t.Fatalf("Got: %s\nWanted: %s", tc.visitor.String(), tc.want)
+		gotErr := tc.visitor.VisitOutro(tc.outro)
+		if tc.visitor.String() != tc.want || gotErr != tc.wantErr {
+			t.Fatalf("Got: %s\nWanted: %s\nGotErr: %s\nWantErr: %s\n", tc.visitor.String(), tc.want, gotErr, tc.wantErr)
 		}
 	}
 }
@@ -76,6 +72,7 @@ func TestOverlayerVisitClip(t *testing.T) {
 		clip    *content.Clip
 		visitor *content.Overlayer
 		want    string
+		wantErr error
 	}{
 		{
 			name: "Overlay clip with background set in Overlayer.",
@@ -89,18 +86,41 @@ func TestOverlayerVisitClip(t *testing.T) {
 				Font:       "/path/to/Font.ttf",
 			},
 			want: "-i /path/to/Background.png -filter_complex overlay=x='if(lt(t,0.000000)," +
-				"NAN,if(lt(t,0.155000),-w+(t-0.000000)*2000.000000,if(lt(t,3.155000)," +
-				"-w+310.000000,-w+310.000000-(t-3.155000)*2000.000000)))':y=470," +
+				"NAN,if(lt(t,0.275000),-w+(t-0.000000)*2000.000000,if(lt(t,3.275000)," +
+				"-w+550.000000,-w+550.000000-(t-3.275000)*2000.000000)))':y=(H-h)/2," +
 				"drawtext=fontfile=/path/to/Font.ttf:text=TestTitle\nTestBroadcaster:" +
-				"fontsize=26:fontcolor=ffffff:alpha='if(lt(t,0.500000),0,if(lt(t,1.000000)," +
+				"fontsize=52:fontcolor=ffffff:alpha='if(lt(t,0.500000),0,if(lt(t,1.000000)," +
 				"(t-0.500000)/1,if(lt(t,2.500000),1,if(lt(t,3.000000),(1-(t-2.500000))/1," +
-				"0))))':x=20:y=500",
+				"0))))':x=20:y=(h-text_h)/2",
+			wantErr: nil,
+		},
+		{
+			name: "No overlay args returns ErrEmptyOverlay",
+			clip: &content.Clip{
+				Duration: 1.0,
+			},
+			visitor: &content.Overlayer{
+				Font: "/path/to/Font.ttf",
+			},
+			want:    "",
+			wantErr: content.ErrEmptyOverlay,
+		},
+		{
+			name: "No duration returns ErrNoDuration",
+			clip: &content.Clip{
+				Duration: 0.0,
+			},
+			visitor: &content.Overlayer{
+				Font: "/path/to/Font.ttf",
+			},
+			want:    "",
+			wantErr: content.ErrNoDuration,
 		},
 	}
 	for _, tc := range tests {
-		tc.visitor.VisitClip(tc.clip)
-		if tc.visitor.String() != tc.want {
-			t.Fatalf("Got: %s\nWanted: %s", tc.visitor.String(), tc.want)
+		gotErr := tc.visitor.VisitClip(tc.clip)
+		if tc.visitor.String() != tc.want || gotErr != tc.wantErr {
+			t.Fatalf("Got: %s\nWanted: %s\nGotErr: %s\nWantErr: %s\n", tc.visitor.String(), tc.want, gotErr, tc.wantErr)
 		}
 	}
 }
@@ -116,6 +136,7 @@ func TestOverlayerVisitMany(t *testing.T) {
 		outros  []*content.Outro
 		visitor *content.Overlayer
 		want    string
+		wantErr error
 	}{
 		{
 			name: "One Intro, one Clip, one Outro in sequence, success case.",
@@ -141,12 +162,13 @@ func TestOverlayerVisitMany(t *testing.T) {
 				Font:       "/path/to/Font.ttf",
 			},
 			want: "-i /path/to/Background.png -filter_complex overlay=x='if(lt(t,1.000000)," +
-				"NAN,if(lt(t,1.155000),-w+(t-1.000000)*2000.000000,if(lt(t,4.155000)," +
-				"-w+310.000000,-w+310.000000-(t-4.155000)*2000.000000)))':y=470," +
+				"NAN,if(lt(t,1.275000),-w+(t-1.000000)*2000.000000,if(lt(t,4.275000)," +
+				"-w+550.000000,-w+550.000000-(t-4.275000)*2000.000000)))':y=(H-h)/2," +
 				"drawtext=fontfile=/path/to/Font.ttf:text=TestTitle\nTestBroadcaster:" +
-				"fontsize=26:fontcolor=ffffff:alpha='if(lt(t,1.500000),0,if(lt(t,2.000000)," +
+				"fontsize=52:fontcolor=ffffff:alpha='if(lt(t,1.500000),0,if(lt(t,2.000000)," +
 				"(t-1.500000)/1,if(lt(t,3.500000),1,if(lt(t,4.000000),(1-(t-3.500000))/1," +
-				"0))))':x=20:y=500",
+				"0))))':x=20:y=(h-text_h)/2",
+			wantErr: nil,
 		},
 		{
 			name:   "Multiple clips success case.",
@@ -170,19 +192,19 @@ func TestOverlayerVisitMany(t *testing.T) {
 			},
 			want: "-i /path/to/Background.png -i /path/to/Background.png -filter_complex " +
 				"overlay=x='if(lt(t,0.000000)," +
-				"NAN,if(lt(t,0.155000),-w+(t-0.000000)*2000.000000,if(lt(t,3.155000)," +
-				"-w+310.000000,-w+310.000000-(t-3.155000)*2000.000000)))':y=470," +
+				"NAN,if(lt(t,0.275000),-w+(t-0.000000)*2000.000000,if(lt(t,3.275000)," +
+				"-w+550.000000,-w+550.000000-(t-3.275000)*2000.000000)))':y=(H-h)/2," +
 				"drawtext=fontfile=/path/to/Font.ttf:text=TestTitle\nTestBroadcaster:" +
-				"fontsize=26:fontcolor=ffffff:alpha='if(lt(t,0.500000),0,if(lt(t,1.000000)," +
+				"fontsize=52:fontcolor=ffffff:alpha='if(lt(t,0.500000),0,if(lt(t,1.000000)," +
 				"(t-0.500000)/1,if(lt(t,2.500000),1,if(lt(t,3.000000),(1-(t-2.500000))/1," +
-				"0))))':x=20:y=500," +
+				"0))))':x=20:y=(h-text_h)/2," +
 				"overlay=x='if(lt(t,1.000000)," +
-				"NAN,if(lt(t,1.163000),-w+(t-1.000000)*2000.000000,if(lt(t,4.163000)," +
-				"-w+326.000000,-w+326.000000-(t-4.163000)*2000.000000)))':y=470," +
+				"NAN,if(lt(t,1.291000),-w+(t-1.000000)*2000.000000,if(lt(t,4.291000)," +
+				"-w+582.000000,-w+582.000000-(t-4.291000)*2000.000000)))':y=(H-h)/2," +
 				"drawtext=fontfile=/path/to/Font.ttf:text=TestTitle2\nTestBroadcaster2:" +
-				"fontsize=26:fontcolor=ffffff:alpha='if(lt(t,1.500000),0,if(lt(t,2.000000)," +
+				"fontsize=52:fontcolor=ffffff:alpha='if(lt(t,1.500000),0,if(lt(t,2.000000)," +
 				"(t-1.500000)/1,if(lt(t,3.500000),1,if(lt(t,4.000000),(1-(t-3.500000))/1," +
-				"0))))':x=20:y=500",
+				"0))))':x=20:y=(h-text_h)/2",
 		},
 	}
 	for _, tc := range tests {

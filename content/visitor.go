@@ -1,7 +1,7 @@
 package content
 
 type Visitor interface {
-	VisitClip(*Clip)
-	VisitIntro(*Intro)
-	VisitOutro(*Outro)
+	VisitClip(*Clip) error
+	VisitIntro(*Intro) error
+	VisitOutro(*Outro) error
 }

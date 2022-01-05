@@ -28,14 +28,12 @@ func main() {
 	// load configs from command line arg
 	c, err := config.LoadConfig(os.Args[1])
 	if err != nil {
-		fmt.Println("Couldn't load config.")
 		log.Fatal(err)
 	}
 
 	// init db
 	dbIntf, err := db.New(c.Name + ".db")
 	if err != nil {
-		fmt.Println("Couldn't create content-db.")
 		log.Fatal(err)
 	}
 
@@ -43,7 +41,6 @@ func main() {
 	query := content.Query(c.Source.Query)
 	getIntf, err := content.NewGetter(c.Source.Platform, c.Source.Credentials, query)
 	if err != nil {
-		fmt.Println("Couldn't create content-getter.")
 		log.Fatal(err)
 	}
 
@@ -55,7 +52,6 @@ func main() {
 		fmt.Printf("Have: %v, Want: %v\nGetting more content.\n", len(clips), c.Source.Query.First)
 		dirtyContent, err := getIntf.Get()
 		if err != nil {
-			fmt.Println("Couldn't get new content.")
 			log.Fatal(err)
 		}
 		if len(dirtyContent) == 0 {
@@ -66,11 +62,10 @@ func main() {
 		for _, v := range dirtyContent {
 			exists, err := dbIntf.Exists(v)
 			if err != nil {
-				fmt.Println("Couldn't check exists for dbIntf.")
 				log.Fatal(err)
 			}
 			if !exists && len(clips) < c.Source.Query.First {
-				valid := Filter(v, c.Filters)
+				valid := filter(v, c.Filters)
 				if valid {
 					clips = append(clips, v)
 				}
@@ -82,13 +77,10 @@ func main() {
 		fmt.Println("Unable to find new content.\nExiting...")
 		return
 	}
-	fmt.Printf("Was able to retrieve %v content objects.\n", len(clips))
-	fmt.Println("Number of tries: ", tries)
+	fmt.Printf("Was able to retrieve %v content objects.\nNumber of tries: %v\n", len(clips), tries)
 
 	// create composite video object from clips
 	video := &content.Video{}
-
-	// append the clips to the video
 	for _, v := range clips {
 		video.Append(v)
 	}
@@ -115,15 +107,17 @@ func main() {
 	removeTempFiles()
 
 	// create encoder, encode video components
-	encoder := &content.Encoder{ListFile: ENCODED}
-	fmt.Printf("About to encode video components...")
-	video.Accept(encoder)
+	encoder := &content.Encoder{Path: ENCODED}
+	err = video.Accept(encoder)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// concatenate encoded components into one mp4 file
 	concatCmd := exec.Command("ffmpeg", "-f", "concat", "-safe", "0", "-i", ENCODED, CONCAT)
 	err = concatCmd.Run()
 	if err != nil {
-		fmt.Printf("Couldn't concatenate videos\nCommand string\n%s\n", concatCmd)
+		fmt.Printf("Command string\n%s\n", concatCmd)
 		log.Fatal(err)
 	}
 
@@ -132,11 +126,14 @@ func main() {
 		Font:       c.Options.Overlay.Font,
 		Background: c.Options.Overlay.Background,
 	}
-	video.Accept(overlayer)
+	err = video.Accept(overlayer)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// apply overlay with dateOverlay
 	args := append([]string{"-i", CONCAT}, overlayer.Slice()...)
-	dateOverlay := DateOverlay(c.Intro, c.Source.Query.Days)
+	dateOverlay := createDateOverlay(c.Intro, c.Source.Query.Days)
 	args[len(args)-1] = args[len(args)-1] + "," + dateOverlay
 	args = append(args, FINAL)
 	overlayCmd := exec.Command("ffmpeg", args...)
@@ -144,18 +141,20 @@ func main() {
 	fmt.Println("Applying overlay")
 	err = overlayCmd.Run()
 	if err != nil {
-		fmt.Printf("Couldn't apply overlay\nCommand string\n%s\n", overlayCmd)
+		fmt.Printf("Command string\n%s\n", overlayCmd)
 		log.Fatal(err)
 	}
 
 	// generate description for video
 	describer := &content.Describer{}
-	video.Accept(describer)
+	err = video.Accept(describer)
+	if err != nil {
+		log.Fatal(err)
+	}
 	fmt.Printf("Video's description:\n%s\n", describer)
 
 	shareIntf, err := content.NewSharer(c.Destination.Platform, c.Destination.Credentials)
 	if err != nil {
-		fmt.Println("Couldn't create content-sharer.")
 		log.Fatal(err)
 	}
 
@@ -170,23 +169,22 @@ func main() {
 	}
 
 	// share payload, check that the token cache hasn't expired
-	err = shareIntf.Share(payload)
+	statusCode, err := shareIntf.Share(payload)
 	if err != nil {
-		fmt.Println("Couldn't share content.")
-		os.Remove(c.Destination.TokenCache)
+		fmt.Printf("Couldn't share content: %v\n", err)
 		fmt.Println("Retrying after clearing token cache...")
-		err = shareIntf.Share(payload)
+		os.Remove(c.Destination.TokenCache)
+		statusCode, err = shareIntf.Share(payload)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
-	fmt.Println("Content shared successfully!")
+	fmt.Printf("Content shared!\nResponse Code: %v\n", statusCode)
 
 	// insert data for retrieved components to db
 	for _, v := range clips {
 		err := dbIntf.Insert(v)
 		if err != nil {
-			fmt.Println("Couldn't insert to dbIntf.")
 			log.Fatal(err)
 		}
 	}
@@ -194,16 +192,16 @@ func main() {
 	return
 }
 
-func dateOverlay(i config.Intro, days int) string {
+func createDateOverlay(i config.Intro, days int) string {
+	// create timerange string
 	const prettyDateFull = "January 2, 2006"
 	now := time.Now()
 	last := now.AddDate(0, 0, -1*days)
 	nowFormatted := now.Format(prettyDateFull)
 	lastFormatted := strings.Split(last.Format(prettyDateFull), ",")[0]
-
 	timeRange := lastFormatted + " - " + nowFormatted
 	fmt.Printf("Range: %s\n", timeRange)
-
+	// escape , which is invalid in ffmpeg drawtext
 	escapeText := strings.ReplaceAll(timeRange, `,`, `\\\,`)
 
 	return fmt.Sprintf("drawtext=enable='between(t,%f,%f)':fontfile=%s:text=%s:fontsize=112:fontcolor=ffffff:x=(w-text_w)/2:y=(h-text_h)/2", i.OverlayStart, i.Duration, i.Font, escapeText)
