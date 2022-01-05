@@ -10,6 +10,7 @@ import (
 // TODO: More descriptive name
 // Contains the full configuration of a content strategy
 type Config struct {
+	Name        string      `yaml:"name"`
 	Intro       Intro       `yaml:"intro"`
 	Outro       Outro       `yaml:"outro"`
 	Source      Source      `yaml:"source"`

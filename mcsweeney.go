@@ -28,20 +28,18 @@ import (
 )
 
 const (
-	CONCAT  = "concat.mp4"
-	OVERLAY = "intermediate.mp4"
-	FINAL   = "final.mp4"
+	CONCAT = "concat.mp4"
+	FINAL  = "final.mp4"
 )
 
 func main() {
-	// TODO: add command line parsing
 	c, err := config.LoadConfig(os.Args[1])
 	if err != nil {
 		fmt.Println("Couldn't load config.")
 		log.Fatal(err)
 	}
 
-	dbIntf, err := db.New("mcsweeney-test.db")
+	dbIntf, err := db.New(c.Name)
 	if err != nil {
 		fmt.Println("Couldn't create content-db.")
 		log.Fatal(err)
@@ -148,33 +146,14 @@ func main() {
 	video.Accept(overlayer)
 
 	args := append([]string{"-i", CONCAT}, overlayer.Slice()...)
-	args = append(args, OVERLAY)
+	dateOverlay := DateOverlay(c.Intro, c.Source.Query.Days)
+	args[len(args)-1] = args[len(args)-1] + "," + dateOverlay
+	args = append(args, FINAL)
 	overlayCmd := exec.Command("ffmpeg", args...)
 	fmt.Println("Applying overlay")
 	err = overlayCmd.Run()
 	if err != nil {
 		fmt.Printf("Couldn't apply overlay\nCommand string\n%s\n", overlayCmd)
-		log.Fatal(err)
-	}
-
-	// apply generic overlay for video
-	const prettyDateFull = "January 2, 2006"
-	now := time.Now()
-	last := now.AddDate(0, 0, -7)
-	nowFormatted := now.Format(prettyDateFull)
-	lastFormatted := strings.Split(last.Format(prettyDateFull), ",")[0]
-
-	timeRange := lastFormatted + " - " + nowFormatted
-	fmt.Printf("Range: %s\n", timeRange)
-
-	genericText := strings.ReplaceAll(timeRange, `,`, `\\\,`)
-	//genericText = strings.ReplaceAll(timeRange, `-`, `\\\-`)
-
-	drawtext := fmt.Sprintf("drawtext=enable='between(t,%f,%f)':fontfile=%s:text=%s:fontsize=112:fontcolor=ffffff:x=(w-text_w)/2:y=(h-text_h)/2", c.Intro.OverlayStart, c.Intro.Duration, c.Intro.Font, genericText)
-	genericOverlayCmd := exec.Command("ffmpeg", "-i", OVERLAY, "-vf", drawtext, "-acodec", "copy", FINAL)
-	err = genericOverlayCmd.Run()
-	if err != nil {
-		fmt.Printf("Couldn't apply generic overlay\nCommand string\n%s\n", genericOverlayCmd)
 		log.Fatal(err)
 	}
 
@@ -222,6 +201,23 @@ func main() {
 	}
 
 	return
+}
+
+// DateOverlay creates an overlay for the dates covered by this routine,
+// intended to appear in the intro portion of the video.
+func DateOverlay(i config.Intro, days int) string {
+	const prettyDateFull = "January 2, 2006"
+	now := time.Now()
+	last := now.AddDate(0, 0, -1*days)
+	nowFormatted := now.Format(prettyDateFull)
+	lastFormatted := strings.Split(last.Format(prettyDateFull), ",")[0]
+
+	timeRange := lastFormatted + " - " + nowFormatted
+	fmt.Printf("Range: %s\n", timeRange)
+
+	escapeText := strings.ReplaceAll(timeRange, `,`, `\\\,`)
+
+	return fmt.Sprintf("drawtext=enable='between(t,%f,%f)':fontfile=%s:text=%s:fontsize=112:fontcolor=ffffff:x=(w-text_w)/2:y=(h-text_h)/2", i.OverlayStart, i.Duration, i.Font, escapeText)
 }
 
 // Filter checks whether the given content object passes all filters. If
