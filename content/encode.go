@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"sync"
 )
 
 // Encoder defines a type for encoding video components.
@@ -11,6 +12,7 @@ type Encoder struct {
 	Path    string
 	started bool
 	count   int
+	Wg      sync.WaitGroup
 }
 
 // VisitIntro implements the visitor interface for Encoder.
@@ -26,7 +28,9 @@ func (e *Encoder) VisitIntro(i *Intro) error {
 		return err
 	}
 
-	return encode(i.Path, outfile)
+	e.Wg.Add(1)
+	go e.encode(i.Path, outfile)
+	return nil
 }
 
 // VisitOutro implements the visitor interface for Encoder.
@@ -42,7 +46,9 @@ func (e *Encoder) VisitOutro(o *Outro) error {
 		return err
 	}
 
-	return encode(o.Path, outfile)
+	e.Wg.Add(1)
+	go e.encode(o.Path, outfile)
+	return nil
 }
 
 // VisitClip implements the visitor interface for Encoder.
@@ -58,7 +64,9 @@ func (e *Encoder) VisitClip(c *Clip) error {
 		return err
 	}
 
-	return encode(c.Path, outfile)
+	e.Wg.Add(1)
+	go e.encode(c.Path, outfile)
+	return nil
 }
 
 func (e *Encoder) createOutfile(p string) (outfile string) {
@@ -89,13 +97,15 @@ const (
 	ffmpegPreset string = "slow"
 )
 
-func encode(infile string, outfile string) error {
+func (e *Encoder) encode(infile, outfile string) error {
+	defer e.Wg.Done()
 	cmd := exec.Command("ffmpeg", "-i", infile, "-preset", ffmpegPreset, "-crf", "10", "-c:a", "copy", outfile)
 	fmt.Printf("Encoding:\n%s\n", cmd.String())
-	err := cmd.Run()
+	cmd.Run()
+	/*err := cmd.Run()
 	if err != nil {
 		return err
-	}
+	}*/
 
 	return nil
 }
