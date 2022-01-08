@@ -2,19 +2,20 @@ package content
 
 import (
 	"fmt"
+	"strings"
 )
 
 // Describer generates descriptions for the video components it
 // visits.
 type Describer struct {
 	cursor      float64
-	description string
+	description []string
 }
 
 // String returns a formatted string of generated description. The description
 // is the aggregate of all visited elements, also reflecting visit order.
 func (d *Describer) String() string {
-	return d.description
+	return strings.Join(d.description, "")
 }
 
 // VisitClip implements the visitor interface for Describer. Appends
@@ -34,7 +35,7 @@ func (d *Describer) VisitClip(c *Clip) error {
 		timestamp = fmt.Sprintf("[%v:%v]", minutes, seconds)
 	}
 	// concatenate description, increment cursor
-	d.description += fmt.Sprintf("\n\n%s '%s'\nStreamed by %s at %s\nClipped by %s\n", timestamp, c.Title, c.Broadcaster, c.Channel(), c.Author)
+	d.description = append(d.description, fmt.Sprintf("\n\n%s '%s'\nStreamed by %s at %s\nClipped by %s\n", timestamp, c.Title, c.Broadcaster, c.Channel(), c.Author))
 	d.cursor += c.Duration
 
 	return nil
@@ -43,7 +44,7 @@ func (d *Describer) VisitClip(c *Clip) error {
 // VisitIntro implements the visitor interface for Describer. Appends
 // a faithful duplicate of the intro's description field.
 func (d *Describer) VisitIntro(i *Intro) error {
-	d.description += i.Description
+	d.description = append(d.description, i.Description)
 	d.cursor += i.Duration
 	return nil
 }
@@ -51,7 +52,7 @@ func (d *Describer) VisitIntro(i *Intro) error {
 // VisitOutro implements the visitor interface for Describer. Appends
 // a faithful duplicate of the outro's description field.
 func (d *Describer) VisitOutro(o *Outro) error {
-	d.description += o.Description
+	d.description = append(d.description, o.Description)
 	d.cursor += o.Duration
 	return nil
 }

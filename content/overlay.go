@@ -16,7 +16,7 @@ type Overlayer struct {
 	Background string
 	args       []string
 	cursor     float64
-	overlay    string
+	overlay    []string
 }
 
 // VisitIntro implements the visitor interface for Overlayer.
@@ -63,7 +63,7 @@ func (o *Overlayer) VisitClip(c *Clip) error {
 	}
 	// update input args, overlay string, and cursor
 	o.args = append(o.args, "-i", o.Background)
-	o.overlay += bgOverlay + textOverlay + ","
+	o.overlay = append(o.overlay, bgOverlay+textOverlay)
 	o.cursor += c.Duration
 
 	return nil
@@ -72,15 +72,14 @@ func (o *Overlayer) VisitClip(c *Clip) error {
 // String returns a string of the generated overlay. The overlay is the
 // aggregate of all visited elements, also reflecting visit order.
 func (o *Overlayer) String() string {
-	if o.overlay == "" {
+	if len(o.overlay) == 0 {
 		return ""
 	}
-	var overlayString string
-	for _, v := range o.args {
-		overlayString += v + " "
-	}
+	// add filter complex argument before exporting
+	argsString := strings.Join(o.args, " ") + " -filter_complex "
+	overlayString := strings.Join(o.overlay, ",")
 
-	return overlayString + "-filter_complex " + strings.TrimRight(o.overlay, ",")
+	return argsString + overlayString
 }
 
 // Slice returns a slice representation of the generated overlay.
@@ -88,7 +87,11 @@ func (o *Overlayer) Slice() []string {
 	if len(o.args) == 0 {
 		return nil
 	}
-	return append(o.args, "-filter_complex", strings.TrimRight(o.overlay, ","))
+	// add filter complex argument before exporting
+	args := append(o.args, "-filter_complex")
+	overlayString := strings.Join(o.overlay, ",")
+
+	return append(args, overlayString)
 }
 
 func (o *Overlayer) createOverlayBackground(c *Clip) string {
