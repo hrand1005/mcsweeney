@@ -95,5 +95,5 @@ A simple file with two lines, clientID and token:
 <token>
 ```
 ### Youtube
-Generate oauth credentials for this using the [google developer console](https://console.developers.google.com/)
+Generate oauth credentials for this using the (google developer console)[https://console.developers.google.com/]
 
