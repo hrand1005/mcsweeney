@@ -112,8 +112,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// wait on parallel encoding
-	encoder.Wg.Wait()
 
 	// concatenate encoded components into one mp4 file
 	concatCmd := exec.Command("ffmpeg", "-f", "concat", "-safe", "0", "-i", ENCODED, CONCAT)
