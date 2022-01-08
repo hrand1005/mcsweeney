@@ -1,5 +1,6 @@
 # mcsweeney v1.0 
-media compiler-sharer with efficient editing now employed on youtube 
+media compiler-sharer with efficient editing now employed on youtube.
+
 mcsweeney is designed to pull clips from various video/streaming platforms according to a defined strategy, edit and compile them, and share them for entertainment. 
 
 ![mcsweeney](https://i.ibb.co/s6B62S4/Mcsweeney.png) 
