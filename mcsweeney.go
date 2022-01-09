@@ -1,7 +1,6 @@
 package main
 
 /* TODO:
-- Consistent error handling
 - logging
 - Goroutines
 */
@@ -198,7 +197,11 @@ func createDateOverlay(i config.Intro, days int) string {
 	now := time.Now()
 	last := now.AddDate(0, 0, -1*days)
 	nowFormatted := now.Format(prettyDateFull)
-	lastFormatted := strings.Split(last.Format(prettyDateFull), ",")[0]
+	lastFormatted := last.Format(prettyDateFull)
+	// use abbreviated version if years match
+	if now.Year() == last.Year() {
+		lastFormatted = strings.Split(last.Format(prettyDateFull), ",")[0]
+	}
 	timeRange := lastFormatted + " - " + nowFormatted
 	fmt.Printf("Range: %s\n", timeRange)
 	// escape , which is invalid in ffmpeg drawtext

@@ -43,7 +43,7 @@ func (y *YoutubeSharer) Share(p Payload) (int, error) {
 	upload := &youtube.Video{
 		Snippet: &youtube.VideoSnippet{
 			Title:       p.Title,
-			Description: p.Description,
+			Description: enforceYoutubeConstraints(p.Description),
 			CategoryId:  p.CategoryID,
 			Tags:        strings.Split(p.Keywords, ","),
 		},
@@ -60,4 +60,9 @@ func (y *YoutubeSharer) Share(p Payload) (int, error) {
 	r, err := call.Media(file).Do()
 
 	return r.ServerResponse.HTTPStatusCode, err
+}
+
+func enforceYoutubeConstraints(s string) string {
+	s = strings.ReplaceAll(s, `<`, ``)
+	return strings.ReplaceAll(s, `>`, ``)
 }
