@@ -16,8 +16,10 @@
 
 *.txt
 
-client_secret.json
 *.mkv
 *.mp4
 *.sqlite
 *.db
+
+# ENV variables for secrets/credentials
+*.env
