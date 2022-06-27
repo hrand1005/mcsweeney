@@ -14,25 +14,29 @@ const (
 	ClientSecretEnvKey = "CLIENT_SECRET"
 )
 
+// Credentials returns a map of environment variables specific
+// to twitch authentication/ app access
+func Credentials() map[string]string {
+	envMap := map[string]string{
+		ClientIDEnvKey: os.Getenv(ClientIDEnvKey),
+		ClientSecretEnvKey: os.Getenv(ClientSecretEnvKey),
+		AppTokenEnvKey: os.Getenv(AppTokenEnvKey),
+	}
+	return envMap
+}
+
 // UpdateAppToken generates a new API token and sets the client, environment, and 
 // tokenFile 
-func UpdateAppToken(client *helix.Client, tokenFile string) error {
+func UpdateAppToken(client *helix.Client) error {
 	// updates the access token and writes to the token file
 	resp, err := client.RequestAppAccessToken(nil)
 	if resp.StatusCode != http.StatusOK || err != nil {
 		return fmt.Errorf("Encountered error updating app token: %v\n", err)
 	}
 
-	f, err := os.Create(tokenFile)
-	if err != nil {
-		return fmt.Errorf("Scrape: encountered error overwriting token file: %v", err)
-	}
-	defer f.Close()
-
+	// set new App token in the client and environment
 	client.SetAppAccessToken(resp.Data.AccessToken)
-
 	os.Setenv(AppTokenEnvKey, resp.Data.AccessToken)
-	_, err = f.WriteString(fmt.Sprintf("%s=%s", AppTokenEnvKey, resp.Data.AccessToken))
 
 	return err
 }

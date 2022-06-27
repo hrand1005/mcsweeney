@@ -11,29 +11,32 @@ import (
 	"github.com/nicklaw5/helix"
 )
 
+var env = flag.String("tokens", "", "Path to file defining environment variables, may be overwritten")
 var twitchConf = flag.String("twitch-config", "", "Path to twitch scraper configuration file")
-var tokensFile = flag.String("tokens", "", "Path to file containing app tokens, tokens be overwritten")
 
 const clipScraperTimeout = time.Second * 5
 
 func main() {
 	flag.Parse()
-	if *twitchConf == "" || *tokensFile == "" {
+	if *env == "" || *twitchConf == "" {
 		flag.Usage()
 		return
 	}
 
-	if err := godotenv.Load(".env", *tokensFile); err != nil {
+	// load twitch environment variables from env file
+	err := godotenv.Load(*env)
+	if err != nil {
 		log.Fatalf("failed to load env variables for API access: %v", err)
 	}
+	// write updated credentials back to env file in case tokens expired/updated
+	defer godotenv.Write(twitch.Credentials(), *env)
 
 	tConf, err := LoadTwitchConfig(*twitchConf)
 	if err != nil {
 		log.Fatalf("Encountered error loading twitch config: " + err.Error())
 	}
 
-	// TODO: maybe we can eliminate mutliple uses of tokensFile? 
-	clipScraper, err := ConstructTwitchScraper(tConf, *tokensFile)
+	clipScraper, err := ConstructTwitchScraper(tConf)
 	if err != nil {
 		log.Fatalf("Encountered error constructing twitch scraper: " + err.Error())
 	}
@@ -59,7 +62,7 @@ func main() {
 	log.Println("Finished.")
 }
 
-func ConstructTwitchScraper(conf twitchConfig, tokenFile string) (twitch.Scraper, error) {
+func ConstructTwitchScraper(conf twitchConfig) (twitch.Scraper, error) {
 	cOpts := &helix.Options{
 		ClientID:     os.Getenv(twitch.ClientIDEnvKey),
 		ClientSecret: os.Getenv(twitch.ClientSecretEnvKey),
@@ -74,5 +77,6 @@ func ConstructTwitchScraper(conf twitchConfig, tokenFile string) (twitch.Scraper
 		},
 	}
 
-	return twitch.NewScraper(cOpts, query, tokenFile)
+	return twitch.NewScraper(cOpts, query)
 }
+

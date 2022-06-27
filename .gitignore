@@ -23,4 +23,3 @@
 
 # ENV variables for secrets/credentials/tokens
 .env
-.app_tokens

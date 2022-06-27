@@ -10,6 +10,8 @@ import (
 	"github.com/nicklaw5/helix"
 )
 
+var ErrInvalidOptions = errors.New("NewScraper: options must contian ClientID and ClientSecret")
+
 // Scraper defines an interface for scraping twitch clips from the web
 type Scraper interface {
 	Scrape(ClipFilter, chan<- helix.Clip, <-chan bool)
@@ -22,14 +24,11 @@ type scraper struct {
 	err    error
 	page   helix.Pagination
 	query  helix.ClipsParams
-	tokenFile string
 }
-
-var ErrInvalidOptions = errors.New("NewScraper: options must contian ClientID and ClientSecret")
 
 // NewScraper configures a scraper with the provided client options, clip query params, and file
 // to retrieve and write the api app access token
-func NewScraper(o *helix.Options, q helix.ClipsParams, f string) (Scraper, error) {
+func NewScraper(o *helix.Options, q helix.ClipsParams) (Scraper, error) {
 	if o == nil || o.ClientID == "" || o.ClientSecret == "" {
 		return nil, ErrInvalidOptions
 	}
@@ -44,7 +43,6 @@ func NewScraper(o *helix.Options, q helix.ClipsParams, f string) (Scraper, error
 	return &scraper{
 		client: c,
 		query:  q,
-		tokenFile: f,
 	}, nil
 }
 
@@ -69,7 +67,7 @@ func (s *scraper) Scrape(f ClipFilter, ch chan<- helix.Clip, done <-chan bool) {
 		if cResp.StatusCode != http.StatusOK {
 			if cResp.StatusCode == http.StatusUnauthorized {
 				log.Println("Scrape: Got 401 Status Code, generating new access token")
-				err := UpdateAppToken(s.client, s.tokenFile)
+				err := UpdateAppToken(s.client)
 				if err != nil {
 					s.err = fmt.Errorf("Scrape: failed to update app token: %v", err)
 					return
