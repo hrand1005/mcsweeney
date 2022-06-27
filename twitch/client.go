@@ -1,8 +1,8 @@
-package twitch 
+package twitch
 
 import (
-  "fmt"
-  "os"
+	"fmt"
+	"os"
 
 	"github.com/nicklaw5/helix"
 )
