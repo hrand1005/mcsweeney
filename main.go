@@ -2,9 +2,7 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"time"
 
@@ -14,16 +12,18 @@ import (
 )
 
 var twitchConf = flag.String("twitch-config", "", "Path to twitch scraper configuration file")
+var tokensFile = flag.String("tokens", "", "Path to file containing app tokens, tokens be overwritten")
 
-const clipScraperTimeout = time.Second * 3
+const clipScraperTimeout = time.Second * 5
 
 func main() {
 	flag.Parse()
-	if *twitchConf == "" {
+	if *twitchConf == "" || *tokensFile == "" {
 		flag.Usage()
 		return
 	}
-	if err := godotenv.Load(); err != nil {
+
+	if err := godotenv.Load(".env", *tokensFile); err != nil {
 		log.Fatalf("failed to load env variables for API access: %v", err)
 	}
 
@@ -31,7 +31,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Encountered error loading twitch config: " + err.Error())
 	}
-	clipScraper, err := ConstructTwitchScraper(tConf)
+
+	// TODO: maybe we can eliminate mutliple uses of tokensFile? 
+	clipScraper, err := ConstructTwitchScraper(tConf, *tokensFile)
 	if err != nil {
 		log.Fatalf("Encountered error constructing twitch scraper: " + err.Error())
 	}
@@ -39,47 +41,31 @@ func main() {
 	clipFilter := twitch.ClipFilter(func(c helix.Clip) bool {
 		return true
 	})
-	clipChan := make(chan helix.Clip, 10)
-	doneChan := make(chan bool, 1)
+	clipChan := make(chan helix.Clip)
+	doneChan := make(chan bool)
 
 	go clipScraper.Scrape(clipFilter, clipChan, doneChan)
 
-	select {
-	case clip := <-clipChan:
-		log.Printf("Scraper returned a clip: %+v", clip)
-	case <-time.After(clipScraperTimeout):
-		log.Println("Timed out waiting for clip. Sending done signal...")
-		doneChan <- true
+	// first 5 clips meeting criteria
+	for i := 0; i < 5; i++ {
+		select {
+		case clip := <-clipChan:
+			log.Printf("Scraper returned a clip: %+v", clip)
+		case <-time.After(clipScraperTimeout):
+			log.Println("Timed out waiting for clip. Sending done signal...")
+			doneChan <- true
+		}
 	}
-
 	log.Println("Finished.")
 }
 
-func ConstructTwitchScraper(conf twitchConfig) (twitch.Scraper, error) {
+func ConstructTwitchScraper(conf twitchConfig, tokenFile string) (twitch.Scraper, error) {
 	cOpts := &helix.Options{
-		ClientID:     os.Getenv("CLIENT_ID"),
-		ClientSecret: os.Getenv("CLIENT_SECRET"),
+		ClientID:     os.Getenv(twitch.ClientIDEnvKey),
+		ClientSecret: os.Getenv(twitch.ClientSecretEnvKey),
 	}
 
-	c, err := helix.NewClient(cOpts)
-	if err != nil {
-		return nil, err
-	}
-	// TODO: don't generate new access token every time
-	// request app access token
-
-	resp, err := c.RequestAppAccessToken(nil)
-	if err != nil {
-		return nil, fmt.Errorf("ConstructTwitchScraper: couldn't request app access token: %v", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("ConstructTwitchScraper: requesting app access token returned response with status code %v, err: %v", resp.StatusCode, resp.ErrorMessage)
-	}
-
-	c.SetAppAccessToken(resp.Data.AccessToken)
-
-	q := helix.ClipsParams{
+	query := helix.ClipsParams{
 		GameID: conf.GameID,
 		First:  conf.First,
 		// start date -- counts backwards from 'days' in config
@@ -88,5 +74,5 @@ func ConstructTwitchScraper(conf twitchConfig) (twitch.Scraper, error) {
 		},
 	}
 
-	return twitch.NewScraper(c, q)
+	return twitch.NewScraper(cOpts, query, tokenFile)
 }

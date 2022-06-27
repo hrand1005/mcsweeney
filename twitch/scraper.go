@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/nicklaw5/helix"
 )
@@ -21,18 +22,29 @@ type scraper struct {
 	err    error
 	page   helix.Pagination
 	query  helix.ClipsParams
+	tokenFile string
 }
 
-var ErrInvalidClient = errors.New("NewScraper: client must not be nil")
+var ErrInvalidOptions = errors.New("NewScraper: options must contian ClientID and ClientSecret")
 
-// NewScraper configures a scraper with the provided client and ClipsParams
-func NewScraper(c *helix.Client, q helix.ClipsParams) (Scraper, error) {
-	if c == nil {
-		return nil, ErrInvalidClient
+// NewScraper configures a scraper with the provided client options, clip query params, and file
+// to retrieve and write the api app access token
+func NewScraper(o *helix.Options, q helix.ClipsParams, f string) (Scraper, error) {
+	if o == nil || o.ClientID == "" || o.ClientSecret == "" {
+		return nil, ErrInvalidOptions
 	}
+	
+	c, err := helix.NewClient(o)
+	if err != nil {
+		return nil, fmt.Errorf("NewScraper: failed to create new twitch client: %v", err)
+	}
+
+	c.SetAppAccessToken(os.Getenv(AppTokenEnvKey))
+
 	return &scraper{
 		client: c,
 		query:  q,
+		tokenFile: f,
 	}, nil
 }
 
@@ -53,10 +65,22 @@ func (s *scraper) Scrape(f ClipFilter, ch chan<- helix.Clip, done <-chan bool) {
 			return
 		}
 
+		// check GetClips response, if 401 generate new token, else set error and exit
 		if cResp.StatusCode != http.StatusOK {
-			s.err = fmt.Errorf("Response returned status %v\nError message: %s", cResp.StatusCode, cResp.ErrorMessage)
-			log.Println(s.err)
-			return
+			if cResp.StatusCode == http.StatusUnauthorized {
+				log.Println("Scrape: Got 401 Status Code, generating new access token")
+				err := UpdateAppToken(s.client, s.tokenFile)
+				if err != nil {
+					s.err = fmt.Errorf("Scrape: failed to update app token: %v", err)
+					return
+				}
+				// if the AppToken is successfully updated, start anew and get clips
+				continue
+			} else {
+				s.err = fmt.Errorf("Response returned status %v\nError message: %s", cResp.StatusCode, cResp.ErrorMessage)
+				log.Println(s.err)
+				return
+			}
 		}
 
 		// filter clips and push valid responses on the clips channel
