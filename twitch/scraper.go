@@ -18,10 +18,10 @@ type Scraper interface {
 // scraper uses a client and query to scrape clips, and maintains a cursor using
 // the twitch API's paging system
 type scraper struct {
-	client *helix.Client
-	err    error
-	page   helix.Pagination
-	query  helix.ClipsParams
+	client    *helix.Client
+	err       error
+	page      helix.Pagination
+	query     helix.ClipsParams
 	tokenFile string
 }
 
@@ -33,7 +33,7 @@ func NewScraper(o *helix.Options, q helix.ClipsParams, f string) (Scraper, error
 	if o == nil || o.ClientID == "" || o.ClientSecret == "" {
 		return nil, ErrInvalidOptions
 	}
-	
+
 	c, err := helix.NewClient(o)
 	if err != nil {
 		return nil, fmt.Errorf("NewScraper: failed to create new twitch client: %v", err)
@@ -42,8 +42,8 @@ func NewScraper(o *helix.Options, q helix.ClipsParams, f string) (Scraper, error
 	c.SetAppAccessToken(os.Getenv(AppTokenEnvKey))
 
 	return &scraper{
-		client: c,
-		query:  q,
+		client:    c,
+		query:     q,
 		tokenFile: f,
 	}, nil
 }

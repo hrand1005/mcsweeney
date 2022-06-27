@@ -32,7 +32,7 @@ func main() {
 		log.Fatalf("Encountered error loading twitch config: " + err.Error())
 	}
 
-	// TODO: maybe we can eliminate mutliple uses of tokensFile? 
+	// TODO: maybe we can eliminate mutliple uses of tokensFile?
 	clipScraper, err := ConstructTwitchScraper(tConf, *tokensFile)
 	if err != nil {
 		log.Fatalf("Encountered error constructing twitch scraper: " + err.Error())

@@ -9,13 +9,13 @@ import (
 )
 
 const (
-	AppTokenEnvKey = "TWITCH_APP_TOKEN"
-	ClientIDEnvKey = "CLIENT_ID"
+	AppTokenEnvKey     = "TWITCH_APP_TOKEN"
+	ClientIDEnvKey     = "CLIENT_ID"
 	ClientSecretEnvKey = "CLIENT_SECRET"
 )
 
-// UpdateAppToken generates a new API token and sets the client, environment, and 
-// tokenFile 
+// UpdateAppToken generates a new API token and sets the client, environment, and
+// tokenFile
 func UpdateAppToken(client *helix.Client, tokenFile string) error {
 	// updates the access token and writes to the token file
 	resp, err := client.RequestAppAccessToken(nil)
