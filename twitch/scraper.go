@@ -32,7 +32,7 @@ func NewScraper(o *helix.Options, q helix.ClipsParams) (Scraper, error) {
 	if o == nil || o.ClientID == "" || o.ClientSecret == "" {
 		return nil, ErrInvalidOptions
 	}
-	
+
 	c, err := helix.NewClient(o)
 	if err != nil {
 		return nil, fmt.Errorf("NewScraper: failed to create new twitch client: %v", err)

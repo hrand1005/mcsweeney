@@ -79,4 +79,3 @@ func ConstructTwitchScraper(conf twitchConfig) (twitch.Scraper, error) {
 
 	return twitch.NewScraper(cOpts, query)
 }
-

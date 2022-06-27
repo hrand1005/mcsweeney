@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	AppTokenEnvKey = "TWITCH_APP_TOKEN"
-	ClientIDEnvKey = "CLIENT_ID"
+	AppTokenEnvKey     = "TWITCH_APP_TOKEN"
+	ClientIDEnvKey     = "CLIENT_ID"
 	ClientSecretEnvKey = "CLIENT_SECRET"
 )
 
@@ -18,17 +18,15 @@ const (
 // to twitch authentication/ app access
 func Credentials() map[string]string {
 	envMap := map[string]string{
-		ClientIDEnvKey: os.Getenv(ClientIDEnvKey),
+		ClientIDEnvKey:     os.Getenv(ClientIDEnvKey),
 		ClientSecretEnvKey: os.Getenv(ClientSecretEnvKey),
-		AppTokenEnvKey: os.Getenv(AppTokenEnvKey),
+		AppTokenEnvKey:     os.Getenv(AppTokenEnvKey),
 	}
 	return envMap
 }
 
-// UpdateAppToken generates a new API token and sets the client, environment, and 
-// tokenFile 
+// UpdateAppToken generates a new API token and sets the client, environment
 func UpdateAppToken(client *helix.Client) error {
-	// updates the access token and writes to the token file
 	resp, err := client.RequestAppAccessToken(nil)
 	if resp.StatusCode != http.StatusOK || err != nil {
 		return fmt.Errorf("Encountered error updating app token: %v\n", err)
