@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"log"
-	"os"
 	"time"
 
 	"github.com/hrand1005/mcsweeney/twitch"
@@ -11,7 +10,7 @@ import (
 	"github.com/nicklaw5/helix"
 )
 
-var env = flag.String("tokens", "", "Path to file defining environment variables, may be overwritten")
+var env = flag.String("env", "", "Path to file defining environment variables, may be overwritten")
 var twitchConf = flag.String("twitch-config", "", "Path to twitch scraper configuration file")
 
 const clipScraperTimeout = time.Second * 5
@@ -63,11 +62,6 @@ func main() {
 }
 
 func ConstructTwitchScraper(conf twitchConfig) (twitch.Scraper, error) {
-	cOpts := &helix.Options{
-		ClientID:     os.Getenv(twitch.ClientIDEnvKey),
-		ClientSecret: os.Getenv(twitch.ClientSecretEnvKey),
-	}
-
 	query := helix.ClipsParams{
 		GameID: conf.GameID,
 		First:  conf.First,
@@ -77,5 +71,10 @@ func ConstructTwitchScraper(conf twitchConfig) (twitch.Scraper, error) {
 		},
 	}
 
-	return twitch.NewScraper(cOpts, query)
+	c, err := twitch.NewClient()
+	if err != nil {
+		return nil, err
+	}
+
+	return twitch.NewScraper(c, query)
 }

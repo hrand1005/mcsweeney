@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/nicklaw5/helix"
 )
 
-var ErrInvalidOptions = errors.New("NewScraper: options must contian ClientID and ClientSecret")
+var ErrInvalidClient = errors.New("NewScraper: Client must not be nil")
 
 // Scraper defines an interface for scraping twitch clips from the web
 type Scraper interface {
@@ -28,17 +27,10 @@ type scraper struct {
 
 // NewScraper configures a scraper with the provided client options, clip query params, and file
 // to retrieve and write the api app access token
-func NewScraper(o *helix.Options, q helix.ClipsParams) (Scraper, error) {
-	if o == nil || o.ClientID == "" || o.ClientSecret == "" {
-		return nil, ErrInvalidOptions
+func NewScraper(c *helix.Client, q helix.ClipsParams) (Scraper, error) {
+	if c == nil  {
+		return nil, ErrInvalidClient
 	}
-
-	c, err := helix.NewClient(o)
-	if err != nil {
-		return nil, fmt.Errorf("NewScraper: failed to create new twitch client: %v", err)
-	}
-
-	c.SetAppAccessToken(os.Getenv(AppTokenEnvKey))
 
 	return &scraper{
 		client: c,

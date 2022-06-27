@@ -1,2 +1,2 @@
 go build
-./mcsweeney --twitch-config=configs/twitch_config.yaml --tokens=.env
+./mcsweeney --twitch-config=configs/twitch_config.yaml --env=.env
