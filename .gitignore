@@ -16,6 +16,7 @@
 
 *.txt
 
+# video/db files that may be created during manual testing
 *.mkv
 *.mp4
 *.sqlite

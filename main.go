@@ -2,10 +2,13 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/hrand1005/mcsweeney/twitch"
+	"github.com/hrand1005/mcsweeney/video"
 	"github.com/joho/godotenv"
 	"github.com/nicklaw5/helix"
 )
@@ -40,6 +43,7 @@ func main() {
 		log.Fatalf("Encountered error constructing twitch scraper: " + err.Error())
 	}
 
+	// define filter and channels to be used by the scraper
 	clipFilter := twitch.ClipFilter(func(c helix.Clip) bool {
 		return true
 	})
@@ -48,11 +52,18 @@ func main() {
 
 	go clipScraper.Scrape(clipFilter, clipChan, doneChan)
 
-	// first 5 clips meeting criteria
-	for i := 0; i < 5; i++ {
+	// first 1 clips meeting criteria
+	for i := 0; i < 1; i++ {
 		select {
 		case clip := <-clipChan:
 			log.Printf("Scraper returned a clip: %+v", clip)
+			cURL := strings.SplitN(clip.ThumbnailURL, "-preview", 2)[0] + ".mp4"
+			outfile := fmt.Sprintf("%v.mp4", clip.VideoID)
+			log.Printf("Encoding clip with url %s to %s", cURL, outfile)
+			v := video.New(cURL)
+			if err := v.WriteToFile(outfile); err != nil {
+				log.Printf("Encountered error writing video to file: %v", err)
+			}
 		case <-time.After(clipScraperTimeout):
 			log.Println("Timed out waiting for clip. Sending done signal...")
 			doneChan <- true

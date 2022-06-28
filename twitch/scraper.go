@@ -28,7 +28,7 @@ type scraper struct {
 // NewScraper configures a scraper with the provided client options, clip query params, and file
 // to retrieve and write the api app access token
 func NewScraper(c *helix.Client, q helix.ClipsParams) (Scraper, error) {
-	if c == nil  {
+	if c == nil {
 		return nil, ErrInvalidClient
 	}
 
