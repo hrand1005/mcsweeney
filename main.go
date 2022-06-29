@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	// "fmt"
 	"log"
 	"strings"
 	"time"
@@ -52,22 +52,29 @@ func main() {
 
 	go clipScraper.Scrape(clipFilter, clipChan, doneChan)
 
+	compositeVideo := video.New()
+
 	// first 1 clips meeting criteria
-	for i := 0; i < 1; i++ {
+	for i := 0; i < 5; i++ {
 		select {
 		case clip := <-clipChan:
 			log.Printf("Scraper returned a clip: %+v", clip)
 			cURL := strings.SplitN(clip.ThumbnailURL, "-preview", 2)[0] + ".mp4"
-			outfile := fmt.Sprintf("%v.mp4", clip.VideoID)
-			log.Printf("Encoding clip with url %s to %s", cURL, outfile)
-			v := video.New(cURL)
-			if err := v.WriteToFile(outfile); err != nil {
+			outfile := clip.VideoID + ".mp4"
+			subVideo := video.New()
+			subVideo.Append(cURL)
+			if err := subVideo.WriteToFile(outfile); err != nil {
 				log.Printf("Encountered error writing video to file: %v", err)
+			} else {
+				compositeVideo.Append(outfile)
 			}
 		case <-time.After(clipScraperTimeout):
 			log.Println("Timed out waiting for clip. Sending done signal...")
 			doneChan <- true
 		}
+	}
+	if err := compositeVideo.WriteToFile("vidout.mp4"); err != nil {
+		log.Printf("Encountered error writing video to file: %v", err)
 	}
 	log.Println("Finished.")
 }
