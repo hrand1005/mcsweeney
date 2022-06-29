@@ -54,20 +54,13 @@ func main() {
 
 	compositeVideo := video.New()
 
-	// first 1 clips meeting criteria
+	// first 5 clips meeting criteria
 	for i := 0; i < 5; i++ {
 		select {
 		case clip := <-clipChan:
 			log.Printf("Scraper returned a clip: %+v", clip)
 			cURL := strings.SplitN(clip.ThumbnailURL, "-preview", 2)[0] + ".mp4"
-			outfile := clip.VideoID + ".mp4"
-			subVideo := video.New()
-			subVideo.Append(cURL)
-			if err := subVideo.WriteToFile(outfile); err != nil {
-				log.Printf("Encountered error writing video to file: %v", err)
-			} else {
-				compositeVideo.Append(outfile)
-			}
+			compositeVideo.Append(cURL)
 		case <-time.After(clipScraperTimeout):
 			log.Println("Timed out waiting for clip. Sending done signal...")
 			doneChan <- true
