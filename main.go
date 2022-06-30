@@ -56,8 +56,8 @@ func main() {
 	clips := make([]helix.Clip, 0, 10)
 	clipMP4s := make([]string, 0, 10)
 
-	// first 5 clips meeting criteria
-	for i := 0; i < 5; i++ {
+	// first 10 clips meeting criteria
+	for i := 0; i < 10; i++ {
 		select {
 		case clip := <-clipChan:
 			log.Printf("Scraper returned a clip: %+v", clip)
