@@ -37,3 +37,32 @@ func ConcatenateMP4Files(inputs []string, outfile string) error {
 
 	return cmd.Run()
 }
+
+const intermediateFileList = "intermediate.txt"
+
+func EncodeAndConcatMP4Files(inputs []string, outfile string) error {
+	f, err := os.Create(intermediateFileList)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	for i, v := range inputs {
+		intFile := fmt.Sprintf("intermediate%v.mkv", i)
+		f.WriteString(
+			fmt.Sprintf("file '%s'\n", intFile),
+		)
+		cmd := exec.Command("ffmpeg", "-i", v, "-c:v", "libx264", "-preset", "slow", "-crf", "22", "-c:a", "ac3", intFile, "-y")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			log.Printf("Encountered error executing ffmpeg command: %v\n", err)
+		}
+	}
+
+	cmd := exec.Command("ffmpeg", "-f", "concat", "-safe", "0", "-i", intermediateFileList, "-c", "copy", outfile, "-y")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}

@@ -69,7 +69,7 @@ func main() {
 			doneChan <- true
 		}
 	}
-	if err := video.ConcatenateMP4Files(clipMP4s, "vidout.mp4"); err != nil {
+	if err := video.EncodeAndConcatMP4Files(clipMP4s, "vidout.mp4"); err != nil {
 		log.Printf("Encountered error writing video to file: %v", err)
 	}
 	log.Printf("Generated description for video:\n%s", DescriptionFromTwitchClips(clips, 0))
