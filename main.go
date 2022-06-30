@@ -52,23 +52,27 @@ func main() {
 
 	go clipScraper.Scrape(clipFilter, clipChan, doneChan)
 
-	compositeVideo := video.New()
+	// keep a slice of clip mp4s to create an outfile
+	clips := make([]helix.Clip, 0, 10)
+	clipMP4s := make([]string, 0, 10)
 
 	// first 5 clips meeting criteria
 	for i := 0; i < 5; i++ {
 		select {
 		case clip := <-clipChan:
 			log.Printf("Scraper returned a clip: %+v", clip)
+			clips = append(clips, clip)
 			cURL := strings.SplitN(clip.ThumbnailURL, "-preview", 2)[0] + ".mp4"
-			compositeVideo.Append(cURL)
+			clipMP4s = append(clipMP4s, cURL)
 		case <-time.After(clipScraperTimeout):
 			log.Println("Timed out waiting for clip. Sending done signal...")
 			doneChan <- true
 		}
 	}
-	if err := compositeVideo.WriteToFile("vidout.mp4"); err != nil {
+	if err := video.ConcatenateMP4Files(clipMP4s, "vidout.mp4"); err != nil {
 		log.Printf("Encountered error writing video to file: %v", err)
 	}
+	log.Printf("Generated description for video:\n%s", DescriptionFromTwitchClips(clips, 0))
 	log.Println("Finished.")
 }
 
