@@ -15,6 +15,7 @@ const (
 	defaultScale       = "1920x1080"
 )
 
+// DEPRECATED DUE TO INFLEXIBLE CONCATENATION OF DIFFERENT CODECS / RESOLUTIONS / SCALES
 // ConcatenateMP4Files takes a slice of MP4 files as input and writes them to
 // a file with the given 'outfile' name. Uses default values defined above for
 // concatenation.
@@ -49,18 +50,33 @@ func EncodeAndConcatMP4Files(inputs []string, outfile string) error {
 
 	for i, v := range inputs {
 		intFile := fmt.Sprintf("intermediate%v.mkv", i)
+		if err := EncodeMP4ToMKV(v, intFile); err != nil {
+			log.Printf("Encountered error executing ffmpeg command: %v\n", err)
+		}
 		f.WriteString(
 			fmt.Sprintf("file '%s'\n", intFile),
 		)
-		cmd := exec.Command("ffmpeg", "-i", v, "-c:v", "libx264", "-preset", "slow", "-crf", "22", "-c:a", "ac3", intFile, "-y")
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err := cmd.Run(); err != nil {
-			log.Printf("Encountered error executing ffmpeg command: %v\n", err)
-		}
 	}
 
-	cmd := exec.Command("ffmpeg", "-f", "concat", "-safe", "0", "-i", intermediateFileList, "-c", "copy", outfile, "-y")
+	return ConcatMKVFromFileToMP4(intermediateFileList, outfile)
+}
+
+// EncodeToMKV encodes the given mp4 file to mkv intermediate file defined by
+// outfile, which is expected to have the .mkv extension in the name. Returns the
+// result of the command execution.
+func EncodeMP4ToMKV(input string, outfile string) error {
+	cmd := exec.Command("ffmpeg", "-i", input, "-c:v", "libx264", "-preset", "slow", "-crf", "22", "-c:a", "ac3", outfile, "-y")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}
+
+// ConcatInfileToMP4 takes in an ffmpeg input file for concatenation, and outputs the
+// result to outfile, which is expected to have the .mp4 file extension in the name.
+// Returns the result of the command execution.
+func ConcatMKVFromFileToMP4(infile, outfile string) error {
+	cmd := exec.Command("ffmpeg", "-f", "concat", "-safe", "0", "-i", infile, "-c", "copy", outfile, "-y")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 

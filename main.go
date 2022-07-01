@@ -2,6 +2,9 @@ package main
 
 import (
 	"flag"
+	"os"
+	"path/filepath"
+
 	// "fmt"
 	"log"
 	"strings"
@@ -28,7 +31,7 @@ func main() {
 	// load twitch environment variables from env file
 	err := godotenv.Load(*env)
 	if err != nil {
-		log.Fatalf("failed to load env variables for API access: %v", err)
+		log.Fatalf("Failed to load env variables for API access: %v", err)
 	}
 	// write updated credentials back to env file in case tokens expired/updated
 	defer godotenv.Write(twitch.Credentials(), *env)
@@ -52,26 +55,33 @@ func main() {
 
 	go clipScraper.Scrape(clipFilter, clipChan, doneChan)
 
+	// TODO: decide on whether this should be an arg or a config value
+	clipTargetCount := 3
+
 	// keep a slice of clip mp4s to create an outfile
-	clips := make([]helix.Clip, 0, 10)
-	clipMP4s := make([]string, 0, 10)
+	clips := make([]helix.Clip, 0, clipTargetCount)
+	clipMP4s := make([]string, 0, clipTargetCount)
 
 	// first 10 clips meeting criteria
-	for i := 0; i < 10; i++ {
+	for i := 0; i < clipTargetCount; i++ {
 		select {
 		case clip := <-clipChan:
-			log.Printf("Scraper returned a clip: %+v", clip)
+			log.Printf("Scraper returned a clip:\n%+v\n", clip)
 			clips = append(clips, clip)
 			cURL := strings.SplitN(clip.ThumbnailURL, "-preview", 2)[0] + ".mp4"
 			clipMP4s = append(clipMP4s, cURL)
+
+			// NEW:
+
 		case <-time.After(clipScraperTimeout):
 			log.Println("Timed out waiting for clip. Sending done signal...")
 			doneChan <- true
 		}
 	}
 	if err := video.EncodeAndConcatMP4Files(clipMP4s, "vidout.mp4"); err != nil {
-		log.Printf("Encountered error writing video to file: %v", err)
+		log.Fatalf("Encountered error writing video to file: %v", err)
 	}
+	defer cleanup()
 	log.Printf("Generated description for video:\n%s", DescriptionFromTwitchClips(clips, 0))
 	log.Println("Finished.")
 }
@@ -92,4 +102,15 @@ func ConstructTwitchScraper(conf twitchConfig) (twitch.Scraper, error) {
 	}
 
 	return twitch.NewScraper(c, query)
+}
+
+// cleanup is meant to destroy intermediate files used in the video compilation.
+// cleanup should only be called if video compilation didn't fail, otherwise
+// keep intermediate files around for debugging. Currently hardcodes files to
+// remove.
+func cleanup() {
+	intFiles, _ := filepath.Glob("*.mkv")
+	for _, v := range intFiles {
+		os.Remove(v)
+	}
 }
