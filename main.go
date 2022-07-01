@@ -52,34 +52,54 @@ func main() {
 	})
 	clipChan := make(chan helix.Clip)
 	doneChan := make(chan bool)
-
 	go clipScraper.Scrape(clipFilter, clipChan, doneChan)
 
 	// TODO: decide on whether this should be an arg or a config value
-	clipTargetCount := 3
+	clipTargetCount := 10
 
 	// keep a slice of clip mp4s to create an outfile
 	clips := make([]helix.Clip, 0, clipTargetCount)
-	clipMP4s := make([]string, 0, clipTargetCount)
 
-	// first 10 clips meeting criteria
+	// number of encodings that can occur in parallel
+	encoderPool := 3
+	mp4Encoder := video.NewMP4ToMKVEncoder("intermediate.txt", encoderPool) /*encoding options*/
+	// mp4Chan is the channel the mp4Encoder expects to recieve mp4 filepaths
+	// from, and then encode them
+	mp4Chan := make(chan string, encoderPool)
+	encodeResultChan := make(chan string)
+	encodeDoneChan := make(chan bool)
+	go mp4Encoder.Encode(mp4Chan, encodeResultChan, encodeDoneChan)
+
+	encodeJobs := 0
 	for i := 0; i < clipTargetCount; i++ {
 		select {
 		case clip := <-clipChan:
 			log.Printf("Scraper returned a clip:\n%+v\n", clip)
 			clips = append(clips, clip)
 			cURL := strings.SplitN(clip.ThumbnailURL, "-preview", 2)[0] + ".mp4"
-			clipMP4s = append(clipMP4s, cURL)
+			// clipMP4s = append(clipMP4s, cURL)
 
-			// NEW:
+			// NEW: Parallel Encoding
+			mp4Chan <- cURL
+			encodeJobs += 1
 
 		case <-time.After(clipScraperTimeout):
 			log.Println("Timed out waiting for clip. Sending done signal...")
-			doneChan <- true
+			break
 		}
 	}
-	if err := video.EncodeAndConcatMP4Files(clipMP4s, "vidout.mp4"); err != nil {
+	// send done message to the scraper goroutine
+	doneChan <- true
+
+	// retrieve intermediate files from the mp4Encoder as required
+	for i := 0; i < encodeJobs; i++ {
+		log.Printf("An encoding finished with result:\n %s", <-encodeResultChan)
+	}
+	encodeDoneChan <- true
+
+	if err := video.ConcatMKVFromFileToMP4("intermediate.txt", "vidout.mp4"); err != nil {
 		log.Fatalf("Encountered error writing video to file: %v", err)
+		return
 	}
 	defer cleanup()
 	log.Printf("Generated description for video:\n%s", DescriptionFromTwitchClips(clips, 0))
@@ -111,6 +131,10 @@ func ConstructTwitchScraper(conf twitchConfig) (twitch.Scraper, error) {
 func cleanup() {
 	intFiles, _ := filepath.Glob("*.mkv")
 	for _, v := range intFiles {
+		os.Remove(v)
+	}
+	listFiles, _ := filepath.Glob("*.txt")
+	for _, v := range listFiles {
 		os.Remove(v)
 	}
 }

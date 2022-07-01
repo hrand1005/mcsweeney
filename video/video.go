@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"sync"
 )
 
 // define ffmpeg filter arguments to be used in concatentation
@@ -81,4 +82,52 @@ func ConcatMKVFromFileToMP4(infile, outfile string) error {
 	cmd.Stderr = os.Stderr
 
 	return cmd.Run()
+}
+
+type MP4ToMKVEncoder struct {
+	// .txt file listing all encoded mp4s
+	mu       sync.Mutex
+	listFile string
+}
+
+// TODO: enforce encoding capacity through job pool or buffered channels
+func NewMP4ToMKVEncoder(listFile string, encodeCapacity int) *MP4ToMKVEncoder {
+	return &MP4ToMKVEncoder{
+		listFile: listFile,
+	}
+}
+
+func (e *MP4ToMKVEncoder) Encode(inputFile <-chan string, report chan<- string, done <-chan bool) {
+	i := 0
+	for {
+		select {
+		case infile := <-inputFile:
+			outfile := fmt.Sprintf("intermediate%v.mkv", i)
+			go func(mp4File, mkvFile string) {
+				log.Printf("Encoding %s to %s...\n", mp4File, mkvFile)
+				cmd := exec.Command("ffmpeg", "-i", mp4File, "-c:v", "libx264", "-preset", "slow", "-crf", "22", "-c:a", "ac3", mkvFile, "-y")
+				cmd.Stdout = os.Stdout
+				cmd.Stderr = os.Stderr
+				err := cmd.Run()
+				if err != nil {
+					report <- fmt.Sprintf("FAIL: encountered error encoding %s: %v\n", mp4File, err)
+				} else {
+					// TODO: Enforce a consistent ordering, or report ordering of clips written to files
+					report <- fmt.Sprintf("SUCCESS: encoded %s to %s\n", mp4File, mkvFile)
+					e.mu.Lock()
+					defer e.mu.Unlock()
+					WriteStringToFile(fmt.Sprintf("file '%s'\n", mkvFile), e.listFile)
+				}
+			}(infile, outfile)
+		case <-done:
+			log.Printf("Recieved done signal, exiting...")
+			return
+		}
+		i += 1
+	}
+}
+
+func WriteStringToFile(s, filename string) {
+	f, _ := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	f.WriteString(s)
 }
