@@ -5,13 +5,11 @@ import (
 	"os"
 	"path/filepath"
 
-	// "fmt"
 	"log"
 	"strings"
 	"time"
 
 	"github.com/hrand1005/mcsweeney/twitch"
-	"github.com/hrand1005/mcsweeney/video"
 	"github.com/joho/godotenv"
 	"github.com/nicklaw5/helix"
 )
@@ -19,7 +17,12 @@ import (
 var env = flag.String("env", "", "Path to file defining environment variables, may be overwritten")
 var twitchConf = flag.String("twitch-config", "", "Path to twitch scraper configuration file")
 
-const clipScraperTimeout = time.Second * 5
+const (
+	clipScraperTimeout = time.Second * 5
+	clipTargetCount    = 4
+	encoderPool        = 3
+	outVideo           = "vidout.mp4"
+)
 
 func main() {
 	flag.Parse()
@@ -28,7 +31,6 @@ func main() {
 		return
 	}
 
-	// load twitch environment variables from env file
 	err := godotenv.Load(*env)
 	if err != nil {
 		log.Fatalf("Failed to load env variables for API access: %v", err)
@@ -41,72 +43,54 @@ func main() {
 		log.Fatalf("Encountered error loading twitch config: " + err.Error())
 	}
 
-	clipScraper, err := ConstructTwitchScraper(tConf)
-	if err != nil {
-		log.Fatalf("Encountered error constructing twitch scraper: " + err.Error())
-	}
+	// start twitch clip scraping service
+	clipChan, scrapeCancel := startScrapingService(tConf)
 
-	// define filter and channels to be used by the scraper
-	clipFilter := twitch.ClipFilter(func(c helix.Clip) bool {
-		return true
-	})
-	clipChan := make(chan helix.Clip)
-	doneChan := make(chan bool)
-	go clipScraper.Scrape(clipFilter, clipChan, doneChan)
+	// start mp4 encoding service
+	mp4Chan, encodeReportChan, encodeCancel := startEncodingService()
 
-	// TODO: decide on whether this should be an arg or a config value
-	clipTargetCount := 10
-
-	// keep a slice of clip mp4s to create an outfile
-	clips := make([]helix.Clip, 0, clipTargetCount)
-
-	// number of encodings that can occur in parallel
-	encoderPool := 3
-	mp4Encoder := video.NewMP4ToMKVEncoder("intermediate.txt", encoderPool) /*encoding options*/
-	// mp4Chan is the channel the mp4Encoder expects to recieve mp4 filepaths
-	// from, and then encode them
-	mp4Chan := make(chan string, encoderPool)
-	encodeResultChan := make(chan string)
-	encodeDoneChan := make(chan bool)
-	go mp4Encoder.Encode(mp4Chan, encodeResultChan, encodeDoneChan)
-
+	// mp4ToClipData maps clip mp4s to their clip metadata, which is useful
+	// for referencing clip metadata associated with the video file
+	mp4ToClip := make(map[string]helix.Clip, clipTargetCount)
 	encodeJobs := 0
 	for i := 0; i < clipTargetCount; i++ {
 		select {
 		case clip := <-clipChan:
-			log.Printf("Scraper returned a clip:\n%+v\n", clip)
-			clips = append(clips, clip)
+			// log.Printf("Scraper returned a clip:\n%+v\n", clip)
 			cURL := strings.SplitN(clip.ThumbnailURL, "-preview", 2)[0] + ".mp4"
-			// clipMP4s = append(clipMP4s, cURL)
-
-			// NEW: Parallel Encoding
+			mp4ToClip[cURL] = clip
 			mp4Chan <- cURL
 			encodeJobs += 1
-
 		case <-time.After(clipScraperTimeout):
 			log.Println("Timed out waiting for clip. Sending done signal...")
 			break
 		}
 	}
-	// send done message to the scraper goroutine
-	doneChan <- true
+	scrapeCancel <- true
 
-	// retrieve intermediate files from the mp4Encoder as required
+	// concatenate videos and build a description as encodeReports are returned
+	concatenator := NewMKVToMP4Concatenator()
+	descriptionBuilder := NewDescriptionBuilder()
 	for i := 0; i < encodeJobs; i++ {
-		log.Printf("An encoding finished with result:\n %s", <-encodeResultChan)
+		rep := <-encodeReportChan
+		if rep.Err != nil {
+			log.Printf("Encountered error encoding %s:\nErr: %v\n", rep.Input, rep.Err)
+		} else {
+			log.Printf("Successfully encoded %s to %s\n", rep.Input, rep.Output)
+			concatenator.AppendMKVFile(rep.Output)
+			descriptionBuilder.AppendClip(mp4ToClip[rep.Input])
+		}
 	}
-	encodeDoneChan <- true
+	encodeCancel <- true
 
-	if err := video.ConcatMKVFromFileToMP4("intermediate.txt", "vidout.mp4"); err != nil {
+	if err := concatenator.Concatenate(outVideo); err != nil {
 		log.Fatalf("Encountered error writing video to file: %v", err)
-		return
 	}
 	defer cleanup()
-	log.Printf("Generated description for video:\n%s", DescriptionFromTwitchClips(clips, 0))
-	log.Println("Finished.")
+	log.Printf("Generated description for video:\n%s", descriptionBuilder.Result())
 }
 
-func ConstructTwitchScraper(conf twitchConfig) (twitch.Scraper, error) {
+func startScrapingService(conf twitchConfig) (<-chan helix.Clip, chan<- bool) {
 	query := helix.ClipsParams{
 		GameID: conf.GameID,
 		First:  conf.First,
@@ -118,10 +102,33 @@ func ConstructTwitchScraper(conf twitchConfig) (twitch.Scraper, error) {
 
 	c, err := twitch.NewClient()
 	if err != nil {
-		return nil, err
+		log.Fatalf("Failed to create twitch client: " + err.Error())
+	}
+	clipScraper, err := twitch.NewScraper(c, query)
+	if err != nil {
+		log.Fatalf("Encountered error constructing twitch scraper: " + err.Error())
 	}
 
-	return twitch.NewScraper(c, query)
+	// define filter and channels to be used by the scraper
+	clipFilter := twitch.ClipFilter(func(c helix.Clip) bool {
+		return true
+	})
+	doneChan := make(chan bool)
+	clipChan := clipScraper.Scrape(clipFilter, doneChan)
+
+	return clipChan, doneChan
+}
+
+func startEncodingService() (chan<- string, <-chan EncodeReport, chan<- bool) {
+	mp4Encoder := NewMP4ToMKVEncoder(encoderPool) /*encoding options*/
+
+	// mp4Chan is the channel the mp4Encoder expects to recieve mp4 filepaths
+	// from, and then encode them
+	mp4Chan := make(chan string, encoderPool)
+	encodeDoneChan := make(chan bool)
+	encodeReportChan := mp4Encoder.Encode(mp4Chan, encodeDoneChan)
+
+	return mp4Chan, encodeReportChan, encodeDoneChan
 }
 
 // cleanup is meant to destroy intermediate files used in the video compilation.
