@@ -82,7 +82,7 @@ func (s *scraper) Scrape(f ClipFilter, done <-chan bool) <-chan helix.Clip {
 			for _, c := range filteredClips {
 				select {
 				case clipChan <- c:
-					log.Printf("Scrape: Sent clip with video id: %v", c.VideoID)
+					log.Printf("Scrape: Sent clip with URL: %v", c.URL)
 				case <-done:
 					log.Println("Scrape: Recieved done signal, returning...")
 					return

@@ -16,11 +16,10 @@ import (
 
 var env = flag.String("env", "", "Path to file defining environment variables, may be overwritten")
 var twitchConf = flag.String("twitch-config", "", "Path to twitch scraper configuration file")
+var maxEncoders = flag.Int("max-encoders", 1, "Maximum number of video encodings that can occur concurrently")
 
 const (
 	clipScraperTimeout = time.Second * 5
-	clipTargetCount    = 4
-	encoderPool        = 3
 	outVideo           = "vidout.mp4"
 )
 
@@ -49,6 +48,7 @@ func main() {
 	// start mp4 encoding service
 	mp4Chan, encodeReportChan, encodeCancel := startEncodingService()
 
+	clipTargetCount := tConf.First
 	// mp4ToClipData maps clip mp4s to their clip metadata, which is useful
 	// for referencing clip metadata associated with the video file
 	mp4ToClip := make(map[string]helix.Clip, clipTargetCount)
@@ -120,11 +120,11 @@ func startScrapingService(conf twitchConfig) (<-chan helix.Clip, chan<- bool) {
 }
 
 func startEncodingService() (chan<- string, <-chan EncodeReport, chan<- bool) {
-	mp4Encoder := NewMP4ToMKVEncoder(encoderPool) /*encoding options*/
+	mp4Encoder := NewMP4ToMKVEncoder(*maxEncoders) /*encoding options*/
 
 	// mp4Chan is the channel the mp4Encoder expects to recieve mp4 filepaths
 	// from, and then encode them
-	mp4Chan := make(chan string, encoderPool)
+	mp4Chan := make(chan string)
 	encodeDoneChan := make(chan bool)
 	encodeReportChan := mp4Encoder.Encode(mp4Chan, encodeDoneChan)
 
