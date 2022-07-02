@@ -9,7 +9,7 @@ import (
 
 const listFile = "intermediate.txt"
 
-type MP4ToMKVEncoder struct{
+type MP4ToMKVEncoder struct {
 	workerPool chan string
 }
 
@@ -43,12 +43,12 @@ func (e *MP4ToMKVEncoder) Encode(inputFile <-chan string, done <-chan bool) <-ch
 			case infile := <-inputFile:
 				outfile := fmt.Sprintf("intermediate%v.mkv", i)
 
-				// ensure that encoding happens only when there is 
+				// ensure that encoding happens only when there is
 				// space in the worker pool
 				e.workerPool <- infile
-				go func(in, out string){
+				go func(in, out string) {
 					e.encode(infile, outfile, reportChan)
-					<- e.workerPool
+					<-e.workerPool
 				}(infile, outfile)
 
 			case <-done:
