@@ -16,8 +16,11 @@
 
 *.txt
 
-client_secret.json
+# video/db files that may be created during manual testing
 *.mkv
 *.mp4
 *.sqlite
 *.db
+
+# ENV variables for secrets/credentials/tokens
+.env

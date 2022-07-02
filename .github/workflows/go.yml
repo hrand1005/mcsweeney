@@ -2,9 +2,9 @@ name: Go
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "v2" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "v2" ]
 
 jobs:
 
@@ -24,8 +24,8 @@ jobs:
     - name: Test
       run: go test -v ./...
     
-    - name: Fmt
-      run: go fmt -v ./...
+    - name: Format
+      run: go fmt ./...
       
     - name: Commit changes
       uses: EndBug/add-and-commit@v9
