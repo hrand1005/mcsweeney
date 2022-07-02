@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -53,7 +52,7 @@ func (db *clipDB) Exists(c helix.Clip) bool {
 	if row.Scan(&result) == sql.ErrNoRows {
 		return false
 	}
-	log.Printf("clip already exists in db:\n%#v\n", c)
+
 	return true
 }
 

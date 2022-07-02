@@ -1,58 +1,64 @@
 # mcsweeney v1.0 
-media compiler-sharer with efficient editing now employed on youtube.
-
-mcsweeney is designed to pull clips from various video/streaming platforms according to a defined strategy, edit and compile them, and share them for entertainment. 
+mcsweeney creates Twitch-clip compilations, and uploads them to Youtube. 
 
 ![mcsweeney](https://i.ibb.co/s6B62S4/Mcsweeney.png) 
-
-## supported platforms
-mcsweeney finds and shares content by consuming apis for popular media platforms. It pulls content from a 'source' and shares it to a 'destination'. mcsweeney currently supports the following platforms:
-
-| sources | destinations |
-| --- | --- |
-| twitch | youtube |
-
 
 ## install
 ### dependencies
 
-Install ffmpeg. On Ubuntu:
+Install ffmpeg. The default Ubuntu install works:
 ```
 sudo apt update 
 sudo apt install ffmpeg
 ```
+If you choose to compile ffmpeg on your machine, be sure to configure your installation with the following options:
 ```
-- go version 1.17
-- ffmpeg
-- gcc compiler
+ffmpeg version 4.4.git Copyright (c) 2000-2022 the FFmpeg developers
+  built with gcc 9 (Ubuntu 9.3.0-17ubuntu1~20.04)
+  configuration: --enable-libx264 --enable-gpl --enable-gnutls
+  libavutil      57. 27.100 / 57. 27.100
+  libavcodec     59. 35.100 / 59. 35.100
+  libavformat    59. 25.100 / 59. 25.100
+  libavdevice    59.  6.100 / 59.  6.100
+  libavfilter     8. 41.100 /  8. 41.100
+  libswscale      6.  6.100 /  6.  6.100
+  libswresample   4.  6.100 /  4.  6.100
+  libpostproc    56.  5.100 / 56.  5.100
 ```
-Once you've installed these dependencies, simply clone the repo and run 'go install'.
+mcsweeney uses a sqlite database to track scraped clips. You need a SQLite driver for this, for example:
 ```
-git clone git@github.com:hrand1005/mcsweeney.git
-cd mcsweeney
-go install
+go get github.com/mattn/go-sqlite3
+go install github.com/mattn/go-sqlite3
+``` 
+You may need to install or reinstall gcc. On Ubuntu:
 ```
-See the following tutorial section to use mcsweeney for the first time.
-## Tutorial
-
-mcsweeney operates by consuming external apis. You will need to create developer accounts with the desired platforms, and list the path of the credentials file in your yaml config file. Here's how you should format them:
-### Twitch
-A simple file with two lines, clientID and token:
-```
-<clientID>
-<token>
-```
-### Youtube
-Generate oauth credentials for this using the [google developer console](https://console.developers.google.com/)
-
-After you've configured your exteral apis, you are ready to define a strategy
-for content creation. Each time you run mcsweeney, you will provide a yaml config 
-for the strategy you want to run. See mcsweeney/examples/example.yaml for
-reference. 
-
-Finally, you are ready to run mcsweeney. 
-```
-go build
-./mcsweeney myconfig.yaml
+sudo apt install --reinstall build-essential
 ```
 
+### Credentials
+mcsweeney leverages the Twitch API. To configure your twitch credentials, create a dotfile of the following form:
+```
+CLIENT_ID="<client id>"
+CLIENT_TOKEN="<client token>"
+TWITCH_APP_TOKEN="<twitch app token>"
+```
+The path to this file should be provided as ```--env=<filepath>``` when executing the mcsweeney binary. It's worth noting
+that the ```TWITCH_APP_TOKEN``` isn't strictly required -- if a token isn't available, mcsweeney will request a new token, and 
+write it to this file. 
+
+### Configs
+Check out ```configs/``` for example configurations for mcsweeney. 
+
+### How to Run
+```
+Usage of ./mcsweeney:
+  -env string
+        Path to file defining environment variables, may be overwritten
+  -max-encoders int
+        Maximum number of video encodings that can occur concurrently (default 1)
+  -twitch-config string
+        Path to twitch scraper configuration file
+
+Example:
+    ./mcsweeney --env=.env --max-encoders=2 --twitch-config=configs/melee.yaml 
+```
