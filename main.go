@@ -39,13 +39,15 @@ func main() {
 
 	tConf, err := LoadTwitchConfig(*twitchConf)
 	if err != nil {
-		log.Fatalf("Encountered error loading twitch config: " + err.Error())
+		log.Fatal("Encountered error loading twitch config: " + err.Error())
 	}
 
-	// start twitch clip scraping service
-	clipChan, scrapeCancel := startScrapingService(tConf)
+	db, err := initClipDB(tConf.DB)
+	if err != nil {
+		log.Fatal("Encountered error initializng database: " + err.Error())
+	}
 
-	// start mp4 encoding service
+	clipChan, scrapeCancel := startScrapingService(tConf, db)
 	mp4Chan, encodeReportChan, encodeCancel := startEncodingService()
 
 	clipTargetCount := tConf.First
@@ -53,17 +55,19 @@ func main() {
 	// for referencing clip metadata associated with the video file
 	mp4ToClip := make(map[string]helix.Clip, clipTargetCount)
 	encodeJobs := 0
+
+scrape:
 	for i := 0; i < clipTargetCount; i++ {
 		select {
 		case clip := <-clipChan:
-			// log.Printf("Scraper returned a clip:\n%+v\n", clip)
+			// transform the ThumbnailURL to get the raw mp4
 			cURL := strings.SplitN(clip.ThumbnailURL, "-preview", 2)[0] + ".mp4"
 			mp4ToClip[cURL] = clip
 			mp4Chan <- cURL
 			encodeJobs += 1
 		case <-time.After(clipScraperTimeout):
 			log.Println("Timed out waiting for clip. Sending done signal...")
-			break
+			break scrape
 		}
 	}
 	scrapeCancel <- true
@@ -77,8 +81,10 @@ func main() {
 			log.Printf("Encountered error encoding %s:\nErr: %v\n", rep.Input, rep.Err)
 		} else {
 			log.Printf("Successfully encoded %s to %s\n", rep.Input, rep.Output)
+			encodedClip := mp4ToClip[rep.Input]
 			concatenator.AppendMKVFile(rep.Output)
-			descriptionBuilder.AppendClip(mp4ToClip[rep.Input])
+			db.Insert(encodedClip)
+			descriptionBuilder.AppendClip(encodedClip)
 		}
 	}
 	encodeCancel <- true
@@ -90,7 +96,21 @@ func main() {
 	log.Printf("Generated description for video:\n%s", descriptionBuilder.Result())
 }
 
-func startScrapingService(conf twitchConfig) (<-chan helix.Clip, chan<- bool) {
+// initClipDB initializes the clipDB from the given file. If the file doesn't
+// exist, a new one is created.
+func initClipDB(f string) (*clipDB, error) {
+	// create db from conf, use it to enforce rules of the filter func
+	handle, err := sqliteDB(f)
+	if err != nil {
+		log.Fatal("Encountered error initializng sqlite handle: " + err.Error())
+	}
+	return newClipDB(handle)
+}
+
+// startScrapingService initializes the twitch scraper with a client with the
+// given configuration and clipDB for filtering. Returns two channels, one
+// which sends clips, and a channel for canceling the scraping service.
+func startScrapingService(conf twitchConfig, db *clipDB) (<-chan helix.Clip, chan<- bool) {
 	query := helix.ClipsParams{
 		GameID: conf.GameID,
 		First:  conf.First,
@@ -111,6 +131,9 @@ func startScrapingService(conf twitchConfig) (<-chan helix.Clip, chan<- bool) {
 
 	// define filter and channels to be used by the scraper
 	clipFilter := twitch.ClipFilter(func(c helix.Clip) bool {
+		if db.Exists(c) {
+			return false
+		}
 		return true
 	})
 	doneChan := make(chan bool)
@@ -119,6 +142,9 @@ func startScrapingService(conf twitchConfig) (<-chan helix.Clip, chan<- bool) {
 	return clipChan, doneChan
 }
 
+// startEncodingService initializes a new MP4ToMKVEncoder. Returns a channel
+// to push mp4s for processing, a channel for recieving results of encodings,
+// and a channel to push a cancel signal for the encoding service.
 func startEncodingService() (chan<- string, <-chan EncodeReport, chan<- bool) {
 	mp4Encoder := NewMP4ToMKVEncoder(*maxEncoders) /*encoding options*/
 
@@ -133,8 +159,7 @@ func startEncodingService() (chan<- string, <-chan EncodeReport, chan<- bool) {
 
 // cleanup is meant to destroy intermediate files used in the video compilation.
 // cleanup should only be called if video compilation didn't fail, otherwise
-// keep intermediate files around for debugging. Currently hardcodes files to
-// remove.
+// keep intermediate files around for debugging.
 func cleanup() {
 	intFiles, _ := filepath.Glob("*.mkv")
 	for _, v := range intFiles {

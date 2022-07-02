@@ -88,7 +88,14 @@ func (s *scraper) Scrape(f ClipFilter, done <-chan bool) <-chan helix.Clip {
 					return
 				}
 			}
-			s.page.Cursor = cResp.Data.Pagination.Cursor
+
+			select {
+			case <-done:
+				log.Println("Scrape: Recieved done signal, returning...")
+				return
+			default:
+				s.page.Cursor = cResp.Data.Pagination.Cursor
+			}
 		}
 	}()
 

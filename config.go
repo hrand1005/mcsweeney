@@ -12,6 +12,7 @@ type twitchConfig struct {
 	GameID string `yaml:"game-id"`
 	First  int    `yaml:"first"`
 	Days   int    `yaml:"days"`
+	DB     string `yaml:"database"`
 }
 
 func LoadTwitchConfig(path string) (twitchConfig, error) {
