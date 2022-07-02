@@ -3,8 +3,8 @@ mcsweeney creates Twitch-clip compilations, and uploads them to Youtube.
 
 ![mcsweeney](https://i.ibb.co/s6B62S4/Mcsweeney.png) 
 
-## install
-### dependencies
+## Setup
+### Dependencies
 
 Install ffmpeg. The default Ubuntu install works:
 ```
@@ -49,7 +49,7 @@ write it to this file.
 ### Configs
 Check out ```configs/``` for example configurations for mcsweeney. 
 
-### How to Run
+## Run
 ```
 Usage of ./mcsweeney:
   -env string
