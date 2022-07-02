@@ -1,4 +1,4 @@
-# mcsweeney v1.0 
+# mcsweeney v2.0 
 mcsweeney creates Twitch-clip compilations, and uploads them to Youtube. 
 
 ![mcsweeney](https://i.ibb.co/s6B62S4/Mcsweeney.png) 
