@@ -1,5 +1,5 @@
 # melee game-id
 game-id: "16282"
-first: 5
-days: 5
+first: 2
+days: 2
 database: "clips.sqlite"

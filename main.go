@@ -2,21 +2,22 @@ package main
 
 import (
 	"flag"
+	"log"
 	"os"
 	"path/filepath"
-
-	"log"
 	"strings"
 	"time"
 
+  "google.golang.org/api/youtube/v3"
 	"github.com/hrand1005/mcsweeney/twitch"
 	"github.com/joho/godotenv"
 	"github.com/nicklaw5/helix"
 )
 
-var env = flag.String("env", "", "Path to file defining environment variables, may be overwritten")
-var twitchConf = flag.String("twitch-config", "", "Path to twitch scraper configuration file")
+var config = flag.String("config", "", "Path to configuration file defining mcsweeney options")
 var maxEncoders = flag.Int("max-encoders", 1, "Maximum number of video encodings that can occur concurrently")
+var twitchCredentials = flag.String("twitch-credentials", "", "Path to file defining twitch credentials as environmnet variables, may be overwritten")
+var youtubeCredentials = flag.String("youtube-credentials", "", "Path to file defining youtube credentials as environmnet variables")
 
 const (
 	clipScraperTimeout = time.Second * 5
@@ -25,19 +26,19 @@ const (
 
 func main() {
 	flag.Parse()
-	if *env == "" || *twitchConf == "" {
+	if *twitchCredentials == "" || *config == "" {
 		flag.Usage()
 		return
 	}
 
-	err := godotenv.Load(*env)
+	err := godotenv.Load(*twitchCredentials, *youtubeCredentials)
 	if err != nil {
 		log.Fatalf("Failed to load env variables for API access: %v", err)
 	}
 	// write updated credentials back to env file in case tokens expired/updated
-	defer godotenv.Write(twitch.Credentials(), *env)
+	defer godotenv.Write(twitch.Credentials(), *twitchCredentials)
 
-	tConf, err := LoadTwitchConfig(*twitchConf)
+	tConf, err := LoadTwitchConfig(*config)
 	if err != nil {
 		log.Fatal("Encountered error loading twitch config: " + err.Error())
 	}
@@ -93,7 +94,31 @@ scrape:
 		log.Fatalf("Encountered error writing video to file: %v", err)
 	}
 	defer cleanup()
-	log.Printf("Generated description for video:\n%s", descriptionBuilder.Result())
+
+	desc := descriptionBuilder.Result()
+	log.Printf("Generated description for video:\n%s", desc)
+
+	/*
+	ytClient, err := NewYoutubeClient()
+	if err != nil {
+		log.Fatalf("Encountered error building youtube client: %v", err)
+	}
+
+	ytVideo := &youtube.Video{
+		Snippet: &youtube.VideoSnippet{
+			Title: "McSweeney Title",
+			Description: desc,
+		},
+		Status: &youtube.VideoStatus{PrivacyStatus: "private"},
+	}
+
+	resp, err := ytClient.UploadVideo(outVideo, ytVideo)
+	if err != nil {
+		log.Fatalf("Encountered error uploading video: %v", err)
+	}
+
+	log.Printf("Uploading Video yielded HTTP Response:\n%#v\nStatus Code: %v", resp, resp.HTTPStatusCode)
+	*/
 }
 
 // initClipDB initializes the clipDB from the given file. If the file doesn't

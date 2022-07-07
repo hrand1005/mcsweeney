@@ -1,2 +1,2 @@
 go build
-./mcsweeney --env=.env --max-encoders=2 --twitch-config=configs/melee.yaml 
+./mcsweeney --twitch-credentials=.twitch --youtube-credentials=.youtube --max-encoders=2 --config=configs/melee.yaml 
