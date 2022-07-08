@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	// "google.golang.org/api/youtube/v3"
 	"github.com/hrand1005/mcsweeney/twitch"
 	"github.com/joho/godotenv"
 	"github.com/nicklaw5/helix"
+	"google.golang.org/api/youtube/v3"
 )
 
 var config = flag.String("config", "", "Path to configuration file defining mcsweeney options")
@@ -98,27 +98,25 @@ scrape:
 	desc := descriptionBuilder.Result()
 	log.Printf("Generated description for video:\n%s", desc)
 
-	/*
-		ytClient, err := NewYoutubeClient()
-		if err != nil {
-			log.Fatalf("Encountered error building youtube client: %v", err)
-		}
+	ytClient, err := NewYoutubeClient()
+	if err != nil {
+		log.Fatalf("Encountered error building youtube client: %v", err)
+	}
 
-		ytVideo := &youtube.Video{
-			Snippet: &youtube.VideoSnippet{
-				Title: "McSweeney Title",
-				Description: desc,
-			},
-			Status: &youtube.VideoStatus{PrivacyStatus: "private"},
-		}
+	ytVideo := &youtube.Video{
+		Snippet: &youtube.VideoSnippet{
+			Title:       "McSweeney Title",
+			Description: desc,
+		},
+		Status: &youtube.VideoStatus{PrivacyStatus: "private"},
+	}
 
-		resp, err := ytClient.UploadVideo(outVideo, ytVideo)
-		if err != nil {
-			log.Fatalf("Encountered error uploading video: %v", err)
-		}
+	resp, err := ytClient.UploadVideo(outVideo, ytVideo)
+	if err != nil {
+		log.Fatalf("Encountered error uploading video: %v", err)
+	}
 
-		log.Printf("Uploading Video yielded HTTP Response:\n%#v\nStatus Code: %v", resp, resp.HTTPStatusCode)
-	*/
+	log.Printf("Uploading Video yielded HTTP Response:\n%#v\nStatus Code: %v", resp, resp.HTTPStatusCode)
 }
 
 // initClipDB initializes the clipDB from the given file. If the file doesn't
