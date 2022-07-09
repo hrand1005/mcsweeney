@@ -22,7 +22,7 @@ const (
 	YoutubeAuthURI      = "https://accounts.google.com/o/oauth2/auth"
 	YoutubeTokenURI     = "https://oauth2.googleapis.com/token"
 	// use this option if not using a web server to redirect
-	RedirectURI = "urn:ietf:wg:oauth:2.0:oob"
+	RedirectURI    = "urn:ietf:wg:oauth:2.0:oob"
 	LocalWebServer = "localhost:8090"
 )
 
@@ -31,7 +31,6 @@ type YoutubeClient struct {
 }
 
 func NewYoutubeClient() (*YoutubeClient, error) {
-
 
 	ctx := context.Background()
 
@@ -110,7 +109,7 @@ func getTokenFromWebServer(c oauth2.Config, url string) (*oauth2.Token, error) {
 	}
 
 	fmt.Println("Waiting for authorization...")
-	code := <- codeChan
+	code := <-codeChan
 
 	// TODO: use real context?
 	return c.Exchange(oauth2.NoContext, code)
@@ -119,9 +118,9 @@ func getTokenFromWebServer(c oauth2.Config, url string) (*oauth2.Token, error) {
 func openURL(url string) error {
 	var err error
 	switch runtime.GOOS {
-	case "linux": 
+	case "linux":
 		err = exec.Command("xdg-open", url).Start()
-	default: 
+	default:
 		err = fmt.Errorf("Environment not supported: %v", runtime.GOOS)
 	}
 
