@@ -23,7 +23,7 @@
 *.db
 
 # ENV variables for secrets/credentials/tokens
-.env
-.twitch
-.youtube
+.env*
+.twitch*
+.youtube*
 

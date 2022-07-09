@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	// "io"
+	"encoding/json"
 	"net"
 	"net/http"
 	"os"
@@ -19,10 +20,10 @@ import (
 const (
 	YoutubeClientID     = "YOUTUBE_CLIENT_ID"
 	YoutubeClientSecret = "YOUTUBE_CLIENT_SECRET"
+	YoutubeTokenFile = "YOUTUBE_TOKEN_FILE"
 	YoutubeAuthURI      = "https://accounts.google.com/o/oauth2/auth"
 	YoutubeTokenURI     = "https://oauth2.googleapis.com/token"
-	// use this option if not using a web server to redirect
-	RedirectURI = "urn:ietf:wg:oauth:2.0:oob"
+	// spin up local web server for authentication
 	LocalWebServer = "localhost:8090"
 )
 
@@ -31,10 +32,6 @@ type YoutubeClient struct {
 }
 
 func NewYoutubeClient() (*YoutubeClient, error) {
-
-
-	ctx := context.Background()
-
 	config := oauth2.Config{
 		ClientID:     os.Getenv(YoutubeClientID),
 		ClientSecret: os.Getenv(YoutubeClientSecret),
@@ -46,22 +43,12 @@ func NewYoutubeClient() (*YoutubeClient, error) {
 		},
 	}
 
-	url := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
-	fmt.Printf("Visit the following URL for the auth dialogue: %v", url)
-
-	fmt.Println("Launching Web Server to get token...")
-	token, err := getTokenFromWebServer(config, url)
+	token, err := getYoutubeAppToken(config)
 	if err != nil {
 		return nil, err
 	}
 
-	// var code string
-	// if _, err := fmt.Scan(&code); err != nil {
-	// 	return nil, err
-	// }
-	//
-	// token, err := config.Exchange(ctx, code)
-
+	ctx := context.Background()
 	service, err := youtube.NewService(ctx, option.WithTokenSource(config.TokenSource(ctx, token)))
 	if err != nil {
 		return nil, err
@@ -144,4 +131,47 @@ func startWebServer() (chan string, error) {
 	}))
 
 	return codeChan, nil
+}
+
+func getYoutubeAppToken(config oauth2.Config) (*oauth2.Token, error) {
+	url := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
+	fmt.Printf("Visit the following URL for the auth dialogue: %v", url)
+
+	var token *oauth2.Token
+	// try getting token from the env variables
+	token, err := readTokenFromFile(os.Getenv(YoutubeTokenFile))
+	if err != nil {
+		fmt.Printf("Failed to read token from file, err: %v\nLaunching web server to get new token", err)
+		token, err = getTokenFromWebServer(config, url)
+		if err != nil {
+			fmt.Printf("Failed to get token from web server: %v\n", err)
+			return nil, fmt.Errorf("failed to get token form web server: %v", err)
+		}
+		writeTokenToFile(os.Getenv(YoutubeTokenFile), token)
+	}
+
+	return token, nil
+}
+
+func readTokenFromFile(tokenFile string) (*oauth2.Token, error) {
+	f, err := os.Open(tokenFile)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	t := &oauth2.Token{}
+	err = json.NewDecoder(f).Decode(t)
+
+	return t, err
+}
+
+func writeTokenToFile(file string, t *oauth2.Token) error {
+	f, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	return json.NewEncoder(f).Encode(t)
 }
