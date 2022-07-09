@@ -20,10 +20,10 @@ import (
 const (
 	YoutubeClientID     = "YOUTUBE_CLIENT_ID"
 	YoutubeClientSecret = "YOUTUBE_CLIENT_SECRET"
-	YoutubeTokenFile = "YOUTUBE_TOKEN_FILE"
+	YoutubeTokenFile    = "YOUTUBE_TOKEN_FILE"
 	YoutubeAuthURI      = "https://accounts.google.com/o/oauth2/auth"
 	YoutubeTokenURI     = "https://oauth2.googleapis.com/token"
-	LocalWebServer = "localhost:8090"
+	LocalWebServer      = "localhost:8090"
 )
 
 type YoutubeClient struct {
