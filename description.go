@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hrand1005/mcsweeney/twitch"
 	"github.com/nicklaw5/helix"
 )
 
@@ -34,7 +33,7 @@ func (d *DescriptionBuilder) PrependCustom(custom string) {
 // Given this expectation, PrependClip is not yet supported.
 func (d *DescriptionBuilder) AppendClip(c helix.Clip) {
 	ts := timestamp(d.cursor)
-	clipDesc := fmt.Sprintf("%s %q\nStreamed by %s at %s\nClipped by %s\n\n", ts, c.Title, c.BroadcasterName, twitch.GetClipChannel(c), c.CreatorName)
+	clipDesc := fmt.Sprintf("%s %q\nStreamed by %s at %s\nClipped by %s\n\n", ts, c.Title, c.BroadcasterName, GetTwitchClipChannel(c), c.CreatorName)
 	d.descriptions = append(d.descriptions, clipDesc)
 	d.cursor += c.Duration
 }

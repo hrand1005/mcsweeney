@@ -21,9 +21,10 @@ const (
 	YoutubeClientID     = "YOUTUBE_CLIENT_ID"
 	YoutubeClientSecret = "YOUTUBE_CLIENT_SECRET"
 	YoutubeTokenFile    = "YOUTUBE_TOKEN_FILE"
-	YoutubeAuthURI      = "https://accounts.google.com/o/oauth2/auth"
-	YoutubeTokenURI     = "https://oauth2.googleapis.com/token"
-	LocalWebServer      = "localhost:8090"
+
+	YoutubeAuthURI  = "https://accounts.google.com/o/oauth2/auth"
+	YoutubeTokenURI = "https://oauth2.googleapis.com/token"
+	LocalWebServer  = "localhost:8090"
 )
 
 type YoutubeClient struct {
@@ -42,7 +43,7 @@ func NewYoutubeClient() (*YoutubeClient, error) {
 		},
 	}
 
-	token, err := getYoutubeAppToken(config)
+	token, err := getYoutubeToken(config)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +99,6 @@ func getTokenFromWebServer(c oauth2.Config, url string) (*oauth2.Token, error) {
 	fmt.Println("Waiting for authorization...")
 	code := <-codeChan
 
-	// TODO: use real context?
 	return c.Exchange(oauth2.NoContext, code)
 }
 
@@ -132,7 +132,7 @@ func startWebServer() (chan string, error) {
 	return codeChan, nil
 }
 
-func getYoutubeAppToken(config oauth2.Config) (*oauth2.Token, error) {
+func getYoutubeToken(config oauth2.Config) (*oauth2.Token, error) {
 	url := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
 	fmt.Printf("Visit the following URL for the auth dialogue: %v", url)
 

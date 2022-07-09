@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hrand1005/mcsweeney/twitch"
 	"github.com/joho/godotenv"
 	"github.com/nicklaw5/helix"
 	"google.golang.org/api/youtube/v3"
@@ -16,8 +15,7 @@ import (
 
 var config = flag.String("config", "", "Path to configuration file defining mcsweeney options")
 var maxEncoders = flag.Int("max-encoders", 1, "Maximum number of video encodings that can occur concurrently")
-var twitchCredentials = flag.String("twitch-credentials", "", "Path to file defining twitch credentials as environmnet variables, may be overwritten")
-var youtubeCredentials = flag.String("youtube-credentials", "", "Path to file defining youtube credentials as environmnet variables")
+var env = flag.String("env", "", "Path to file defining environemnt variables for twitch and youtube credentials")
 
 const (
 	clipScraperTimeout = time.Second * 5
@@ -26,17 +24,15 @@ const (
 
 func main() {
 	flag.Parse()
-	if *twitchCredentials == "" || *config == "" {
+	if *env == "" || *config == "" {
 		flag.Usage()
 		return
 	}
 
-	err := godotenv.Load(*twitchCredentials, *youtubeCredentials)
+	err := godotenv.Load(*env)
 	if err != nil {
 		log.Fatalf("Failed to load env variables for API access: %v", err)
 	}
-	// write updated credentials back to env file in case tokens expired/updated
-	defer godotenv.Write(twitch.Credentials(), *twitchCredentials)
 
 	tConf, err := LoadTwitchConfig(*config)
 	if err != nil {
@@ -48,7 +44,7 @@ func main() {
 		log.Fatal("Encountered error initializng database: " + err.Error())
 	}
 
-	clipChan, scrapeCancel := startScrapingService(tConf, db)
+	clipChan, scrapeCancel := startClipScrapingService(tConf, db)
 	mp4Chan, encodeReportChan, encodeCancel := startEncodingService()
 
 	clipTargetCount := tConf.First
@@ -133,7 +129,7 @@ func initClipDB(f string) (*clipDB, error) {
 // startScrapingService initializes the twitch scraper with a client with the
 // given configuration and clipDB for filtering. Returns two channels, one
 // which sends clips, and a channel for canceling the scraping service.
-func startScrapingService(conf twitchConfig, db *clipDB) (<-chan helix.Clip, chan<- bool) {
+func startClipScrapingService(conf twitchConfig, db *clipDB) (<-chan helix.Clip, chan<- bool) {
 	query := helix.ClipsParams{
 		GameID: conf.GameID,
 		First:  conf.First,
@@ -143,17 +139,17 @@ func startScrapingService(conf twitchConfig, db *clipDB) (<-chan helix.Clip, cha
 		},
 	}
 
-	c, err := twitch.NewClient()
+	c, err := NewTwitchClient()
 	if err != nil {
 		log.Fatalf("Failed to create twitch client: " + err.Error())
 	}
-	clipScraper, err := twitch.NewScraper(c, query)
+	clipScraper, err := NewClipScraper(c, query)
 	if err != nil {
 		log.Fatalf("Encountered error constructing twitch scraper: " + err.Error())
 	}
 
 	// define filter and channels to be used by the scraper
-	clipFilter := twitch.ClipFilter(func(c helix.Clip) bool {
+	clipFilter := ClipFilter(func(c helix.Clip) bool {
 		if db.Exists(c) {
 			return false
 		}
