@@ -8,30 +8,31 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type twitchConfig struct {
-	GameID string `yaml:"game-id"`
-	First  int    `yaml:"first"`
+type Config struct {
 	Days   int    `yaml:"days"`
 	DB     string `yaml:"database"`
+	GameID string `yaml:"game-id"`
+	First  int    `yaml:"first"`
+	Title  string `yaml:"title"`
 }
 
-func LoadTwitchConfig(path string) (twitchConfig, error) {
+func LoadConfig(path string) (Config, error) {
 	f, err := os.OpenFile(path, os.O_RDONLY, 0444)
 	if err != nil {
-		return twitchConfig{}, fmt.Errorf("LoadTwitchConfig: failed to load config from file: %v", err)
+		return Config{}, fmt.Errorf("LoadConfig: failed to load config from file: %v", err)
 	}
 	defer f.Close()
 
 	raw, err := io.ReadAll(f)
 	if err != nil {
-		return twitchConfig{}, fmt.Errorf("LoadTwitchConfig: failed to read file: %v", err)
+		return Config{}, fmt.Errorf("LoadConfig: failed to read file: %v", err)
 	}
 
-	tConf := &twitchConfig{}
-	err = yaml.Unmarshal(raw, tConf)
+	conf := &Config{}
+	err = yaml.Unmarshal(raw, conf)
 	if err != nil {
-		return twitchConfig{}, fmt.Errorf("LoadTwitchConfig: failed to unmarshal to yaml: %v", err)
+		return Config{}, fmt.Errorf("LoadConfig: failed to unmarshal to yaml: %v", err)
 	}
 
-	return *tConf, nil
+	return *conf, nil
 }

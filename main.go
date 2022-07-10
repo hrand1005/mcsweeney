@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -34,20 +35,20 @@ func main() {
 		log.Fatalf("Failed to load env variables for API access: %v", err)
 	}
 
-	tConf, err := LoadTwitchConfig(*config)
+	conf, err := LoadConfig(*config)
 	if err != nil {
 		log.Fatal("Encountered error loading twitch config: " + err.Error())
 	}
 
-	db, err := initClipDB(tConf.DB)
+	db, err := initClipDB(conf.DB)
 	if err != nil {
 		log.Fatal("Encountered error initializng database: " + err.Error())
 	}
 
-	clipChan, scrapeCancel := startClipScrapingService(tConf, db)
+	clipChan, scrapeCancel := startClipScrapingService(conf, db)
 	mp4Chan, encodeReportChan, encodeCancel := startEncodingService()
 
-	clipTargetCount := tConf.First
+	clipTargetCount := conf.First
 	// mp4ToClipData maps clip mp4s to their clip metadata, which is useful
 	// for referencing clip metadata associated with the video file
 	mp4ToClip := make(map[string]helix.Clip, clipTargetCount)
@@ -94,6 +95,9 @@ scrape:
 	desc := descriptionBuilder.Result()
 	log.Printf("Generated description for video:\n%s", desc)
 
+	title := buildTitle(conf)
+	log.Printf("Geenerated title for video:\n%s", title)
+
 	ytClient, err := NewYoutubeClient()
 	if err != nil {
 		log.Fatalf("Encountered error building youtube client: %v", err)
@@ -101,7 +105,7 @@ scrape:
 
 	ytVideo := &youtube.Video{
 		Snippet: &youtube.VideoSnippet{
-			Title:       "McSweeney Title",
+			Title:       title,
 			Description: desc,
 		},
 		Status: &youtube.VideoStatus{PrivacyStatus: "private"},
@@ -129,7 +133,7 @@ func initClipDB(f string) (*clipDB, error) {
 // startScrapingService initializes the twitch scraper with a client with the
 // given configuration and clipDB for filtering. Returns two channels, one
 // which sends clips, and a channel for canceling the scraping service.
-func startClipScrapingService(conf twitchConfig, db *clipDB) (<-chan helix.Clip, chan<- bool) {
+func startClipScrapingService(conf Config, db *clipDB) (<-chan helix.Clip, chan<- bool) {
 	query := helix.ClipsParams{
 		GameID: conf.GameID,
 		First:  conf.First,
@@ -174,6 +178,18 @@ func startEncodingService() (chan<- string, <-chan EncodeReport, chan<- bool) {
 	encodeReportChan := mp4Encoder.Encode(mp4Chan, encodeDoneChan)
 
 	return mp4Chan, encodeReportChan, encodeDoneChan
+}
+
+// buildTitle creates a title string from the given config, appending a date
+// range for the config's content
+func buildTitle(c Config) string {
+	end := time.Now()
+	start := end.AddDate(0, 0, -1*c.Days)
+	return fmt.Sprintf("%s (%s - %s)", c.Title, toAmericanDateString(start), toAmericanDateString(end))
+}
+
+func toAmericanDateString(t time.Time) string {
+	return fmt.Sprintf("%d/%d/%d", t.Month(), t.Day(), t.Year())
 }
 
 // cleanup is meant to destroy intermediate files used in the video compilation.
