@@ -9,11 +9,14 @@ import (
 )
 
 type Config struct {
-	Days   int    `yaml:"days"`
-	DB     string `yaml:"database"`
-	GameID string `yaml:"game-id"`
-	First  int    `yaml:"first"`
-	Title  string `yaml:"title"`
+	CategoryID  string `yaml:"category-id"`
+	Days        int    `yaml:"days"`
+	DB          string `yaml:"database"`
+	Description string `yaml:"description"`
+	GameID      string `yaml:"game-id"`
+	First       int    `yaml:"first"`
+	Tags        string `yaml:"tags"`
+	Title       string `yaml:"title"`
 }
 
 func LoadConfig(path string) (Config, error) {

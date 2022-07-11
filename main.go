@@ -96,7 +96,7 @@ scrape:
 	log.Printf("Generated description for video:\n%s", desc)
 
 	title := buildTitle(conf)
-	log.Printf("Geenerated title for video:\n%s", title)
+	log.Printf("Generated title for video:\n%s", title)
 
 	ytClient, err := NewYoutubeClient()
 	if err != nil {
@@ -106,7 +106,9 @@ scrape:
 	ytVideo := &youtube.Video{
 		Snippet: &youtube.VideoSnippet{
 			Title:       title,
-			Description: desc,
+			Description: conf.Description + desc,
+			CategoryId:  conf.CategoryID,
+			Tags:        strings.Split(conf.Tags, ","),
 		},
 		Status: &youtube.VideoStatus{PrivacyStatus: "private"},
 	}

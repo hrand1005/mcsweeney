@@ -27,3 +27,5 @@
 .twitch*
 .youtube*
 
+# particular config files
+*.yaml
