@@ -28,5 +28,11 @@ jobs:
         TWITCH_TOKEN_FILE: .twitch_token
         YOUTUBE_TOKEN_FILE: .youtube_token
   
+    - name: Test Secret
+      run: |
+        echo $TEST_SECRET
+        echo "$TEST_SECRET"
+        echo "${{ secrets.TEST_SECRET }}"
+  
     - name: McSweeney
       run: ./.github/scripts/ds1.sh
