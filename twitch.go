@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 
@@ -18,27 +17,30 @@ const (
 	TwitchTokenFileKey    = "TWITCH_TOKEN_FILE"
 	TwitchClientIDKey     = "TWITCH_CLIENT_ID"
 	TwitchClientSecretKey = "TWITCH_CLIENT_SECRET"
+	TwitchTokenRawKey     = "TWITCH_TOKEN_RAW"
 )
 
 // setTwitchToken attempst to set a valid access token on the given client.
 // First looks for an existnig access token in the twitch token file env.
 // If a token cannot be retrieved, requests a new token using the given client.
 func setTwitchToken(client *helix.Client) error {
-	token, err := readTokenFromFile(os.Getenv(TwitchTokenFileKey))
-	log.Printf("Error reading token from file: %v", err)
-	if err == nil {
-		client.SetAppAccessToken(token.AccessToken)
-		return nil
-	}
 
-	token, err = getNewTwitchToken(client)
-	if err != nil {
-		return fmt.Errorf("failed to get new twitch token: %v", err)
-	}
-	// set new App token in the client and environment
-	client.SetAppAccessToken(token.AccessToken)
+	// token, err := readTokenFromFile(os.Getenv(TwitchTokenFileKey))
+	// log.Printf("Error reading token from file: %v", err)
+	// if err == nil {
+	// 	client.SetAppAccessToken(token.AccessToken)
+	// 	return nil
+	// }
 
-	return writeTokenToFile(os.Getenv(TwitchTokenFileKey), token)
+	// token, err = getNewTwitchToken(client)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to get new twitch token: %v", err)
+	// }
+	accessToken := os.Getenv(TwitchTokenRawKey)
+	client.SetAppAccessToken(accessToken)
+
+	return nil
+	// return writeTokenToFile(os.Getenv(TwitchTokenFileKey), token)
 }
 
 func getNewTwitchToken(c *helix.Client) (*oauth2.Token, error) {
