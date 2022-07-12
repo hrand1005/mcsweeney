@@ -48,7 +48,7 @@ func getNewTwitchToken(c *helix.Client) (*oauth2.Token, error) {
 		return nil, fmt.Errorf("encountered error requesting new twitch token: %v\n", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("got resp with status code %v when requesting twitch token", resp.StatusCode)
+		return nil, fmt.Errorf("got resp with status code %v and message %s when requesting twitch token", resp.StatusCode, resp.ErrorMessage)
 	}
 
 	return &oauth2.Token{
