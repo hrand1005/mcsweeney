@@ -1,0 +1,32 @@
+name: Go
+
+on:
+  push:
+    branches: [ "ds1-job" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    environment: Souls Archives Deployment
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.18
+
+    - name: Build
+      run: go build -v ./...
+  
+    - name: Prepare temp files
+      run: |
+        echo "${{ secrets.TWITCH_TOKEN }}" > .twitch_token
+        echo "${{ secrets.YOUTUBE_TOKEN }}" > .youtube_token
+      env:
+        TWITCH_TOKEN_FILE: .twitch_token
+        YOUTUBE_TOKEN_FILE: .youtube_token
+  
+    - name: McSweeney
+      run: ./ds1.yaml
