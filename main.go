@@ -25,14 +25,17 @@ const (
 
 func main() {
 	flag.Parse()
-	if *env == "" || *config == "" {
+	if *config == "" {
 		flag.Usage()
 		return
 	}
 
-	err := godotenv.Load(*env)
-	if err != nil {
-		log.Fatalf("Failed to load env variables for API access: %v", err)
+	// if a flag for an environemnt variables file isn't provided, it will be assumed that the
+	// required environment variables have already been set
+	if *env != "" {
+		if err := godotenv.Load(*env); err != nil {
+			log.Fatalf("Failed to load env variables for API access: %v", err)
+		}
 	}
 
 	conf, err := LoadConfig(*config)
