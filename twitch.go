@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
@@ -24,6 +25,7 @@ const (
 // If a token cannot be retrieved, requests a new token using the given client.
 func setTwitchToken(client *helix.Client) error {
 	token, err := readTokenFromFile(os.Getenv(TwitchTokenFileKey))
+	log.Printf("Error reading token from file: %v", err)
 	if err == nil {
 		client.SetAppAccessToken(token.AccessToken)
 		return nil
@@ -44,6 +46,9 @@ func getNewTwitchToken(c *helix.Client) (*oauth2.Token, error) {
 	resp, err := c.RequestAppAccessToken(nil)
 	if resp.StatusCode != http.StatusOK || err != nil {
 		return nil, fmt.Errorf("encountered error requesting new twitch token: %v\n", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("got resp with status code %v when requesting twitch token", resp.StatusCode)
 	}
 
 	return &oauth2.Token{

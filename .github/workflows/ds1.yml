@@ -24,9 +24,6 @@ jobs:
       run: |
         echo "${{ secrets.TWITCH_TOKEN }}" > .twitch_token
         echo "${{ secrets.YOUTUBE_TOKEN }}" > .youtube_token
-      env:
-        TWITCH_TOKEN_FILE: .twitch_token
-        YOUTUBE_TOKEN_FILE: .youtube_token
   
     - name: Test Secret
       run: |
@@ -40,4 +37,6 @@ jobs:
         TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
         YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
         YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+        TWITCH_TOKEN_FILE: .twitch_token
+        YOUTUBE_TOKEN_FILE: .youtube_token
       run: ./.github/scripts/ds1.sh
