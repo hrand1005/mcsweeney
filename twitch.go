@@ -32,12 +32,11 @@ func setTwitchToken(client *helix.Client) error {
 	// 	return nil
 	// }
 
-	// token, err = getNewTwitchToken(client)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to get new twitch token: %v", err)
-	// }
-	accessToken := os.Getenv(TwitchTokenRawKey)
-	client.SetAppAccessToken(accessToken)
+	token, err := getNewTwitchToken(client)
+	if err != nil {
+		return fmt.Errorf("failed to get new twitch token: %v", err)
+	}
+	client.SetAppAccessToken(token.AccessToken)
 
 	return nil
 	// return writeTokenToFile(os.Getenv(TwitchTokenFileKey), token)
@@ -71,9 +70,11 @@ func NewTwitchClient() (*helix.Client, error) {
 		return nil, fmt.Errorf("failed to create new twitch client: %v", err)
 	}
 
-	if err = setTwitchToken(client); err != nil {
-		return nil, fmt.Errorf("failed to set token for new client: %v", err)
-	}
+	accessToken := os.Getenv(TwitchTokenRawKey)
+	client.SetAppAccessToken(accessToken)
+	// if err = setTwitchToken(client); err != nil {
+	// 	return nil, fmt.Errorf("failed to set token for new client: %v", err)
+	// }
 
 	return client, nil
 }
