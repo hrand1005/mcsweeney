@@ -33,10 +33,10 @@ jobs:
   
     - name: McSweeney
       env:
-        TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
-        TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
-        YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
-        YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+        TWITCH_CLIENT_ID: '${{ secrets.TWITCH_CLIENT_ID }}'
+        TWITCH_CLIENT_SECRET: '${{ secrets.TWITCH_CLIENT_SECRET }}'
+        YOUTUBE_CLIENT_ID: '${{ secrets.YOUTUBE_CLIENT_ID }}'
+        YOUTUBE_CLIENT_SECRET: '${{ secrets.YOUTUBE_CLIENT_SECRET }}'
         TWITCH_TOKEN_FILE: .twitch_token
         YOUTUBE_TOKEN_FILE: .youtube_token
       run: ./.github/scripts/ds1.sh

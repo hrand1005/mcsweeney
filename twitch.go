@@ -66,7 +66,7 @@ func NewTwitchClient() (*helix.Client, error) {
 
 	client, err := helix.NewClient(cOpts)
 	if err != nil {
-		return nil, fmt.Errorf("NewClient: failed to create new twitch client: %v", err)
+		return nil, fmt.Errorf("failed to create new twitch client: %v", err)
 	}
 
 	if err = setTwitchToken(client); err != nil {
