@@ -59,12 +59,17 @@ game-id: "16282"
 first: 10
 days: 7
 database: "melee-clips.sqlite"
+description: "Top 10 Melee clips of the week! All credit goes to the creators."
+tags: "Smash,Melee,Gaming,Twitch"
+category-id: "20"
 ```
 The ```game-id```, ```first```, and ```days``` fields define the category and number of clips that mcsweeney will scrape using the
 twitch API. In this case, mcsweeney will pull the first (top) 10 clips from created in the last 7 days for the provided game-id "16282", 
 which happens to represent Super Smash Bros. Melee. ```database``` defines a sqlite file which will store scraped clips so as to prevent
 duplicate scraping in subsequent runs of mcsweeney. If the provided database file doesn't exist, one will be created. Finally, ```title``` 
 defines the title that will be assigned to the uploaded youtube video.
+
+```description```, ```tags```, and ```category-id``` are each youtube-specific fields which will set fields in the uploaded Youtube video, if set. Description prepends a top level description to the generated timestamps and creator acknowledgements automatically set by mcsweeney. ```tags``` is a comma-separated list of tags you want to add to your Youtube video, and category-id specifies the video category as recognized by the Youtube API. In this case, "20" represents the 'gaming' category.
 
 ## Run
 ```
