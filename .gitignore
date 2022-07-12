@@ -16,16 +16,11 @@
 
 *.txt
 
-# video/db files that may be created during manual testing
+# video files that may be created during manual testing
 *.mkv
 *.mp4
-*.sqlite
-*.db
 
 # ENV variables for secrets/credentials/tokens
 .env*
 .twitch*
 .youtube*
-
-# particular config files
-*.yaml
