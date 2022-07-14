@@ -29,6 +29,8 @@ func main() {
 		flag.Usage()
 		return
 	}
+	log.SetPrefix("MCSWEENEY: ")
+	log.SetFlags(log.Ltime)
 
 	err := godotenv.Load(*env)
 	if err != nil {
