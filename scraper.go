@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -15,7 +14,6 @@ var ErrInvalidClient = errors.New("NewClipScraper: Client must not be nil")
 // the twitch API's paging system
 type clipScraper struct {
 	client *helix.Client
-	err    error
 	page   helix.Pagination
 	query  helix.ClipsParams
 }
@@ -48,7 +46,7 @@ func (s *clipScraper) Scrape(f ClipFilter, done <-chan bool) <-chan helix.Clip {
 			s.query.After = s.page.Cursor
 			cResp, err := s.client.GetClips(&s.query)
 			if err != nil {
-				s.err = fmt.Errorf("Encountered error scraping clips: %v\n", err)
+				log.Printf("Encountered error scraping clips: %v\n", err)
 				return
 			}
 
@@ -58,14 +56,13 @@ func (s *clipScraper) Scrape(f ClipFilter, done <-chan bool) <-chan helix.Clip {
 					log.Println("Scrape: Got 401 Status Code, generating new access token")
 					err := setTwitchToken(s.client)
 					if err != nil {
-						s.err = fmt.Errorf("Scrape: failed to update app token: %v", err)
+						log.Printf("Scrape: failed to update app token: %v", err)
 						return
 					}
 					// if the AppToken is successfully updated, start anew and get clips
 					continue
 				} else {
-					s.err = fmt.Errorf("Response returned status %v\nError message: %s", cResp.StatusCode, cResp.ErrorMessage)
-					log.Println(s.err)
+					log.Printf("Response returned status %v\nError message: %s", cResp.StatusCode, cResp.ErrorMessage)
 					return
 				}
 			}
@@ -107,9 +104,4 @@ func filterClips(f ClipFilter, clips []helix.Clip) []helix.Clip {
 	}
 
 	return filtered
-}
-
-// Err returns the last error encountered during scraping, if any
-func (s *clipScraper) Err() error {
-	return s.err
 }

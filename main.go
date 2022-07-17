@@ -163,7 +163,9 @@ func startClipScrapingService(conf Config, db *clipDB) (<-chan helix.Clip, chan<
 		}
 		return true
 	})
-	doneChan := make(chan bool)
+	// doneChan should be buffered so that it doesn't block sending cancel
+	// signals in the case that the scraping goroutine exits prematurely
+	doneChan := make(chan bool, 1)
 	clipChan := clipScraper.Scrape(clipFilter, doneChan)
 
 	return clipChan, doneChan
@@ -178,7 +180,9 @@ func startEncodingService() (chan<- string, <-chan EncodeReport, chan<- bool) {
 	// mp4Chan is the channel the mp4Encoder expects to recieve mp4 filepaths
 	// from, and then encode them
 	mp4Chan := make(chan string)
-	encodeDoneChan := make(chan bool)
+	// encodeDoneChan should be buffered so that it doesn't block sending a cancel
+	// signal in the case that the encoding goroutine exits prematurely
+	encodeDoneChan := make(chan bool, 1)
 	encodeReportChan := mp4Encoder.Encode(mp4Chan, encodeDoneChan)
 
 	return mp4Chan, encodeReportChan, encodeDoneChan
